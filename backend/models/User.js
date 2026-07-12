@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, select: false,},
     role: { type: String, enum: ['buyer','seller', 'admin'], default: 'user',},
     isBanned: { type: Boolean, default: false },
+    resetPasswordToken: { type: String, select: false },
+    resetPasswordExpire: { type: Date, select: false },
 
     viewHistory: [
       {
