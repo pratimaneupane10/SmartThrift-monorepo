@@ -1,25 +1,8 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, Pressable, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Image, Pressable, StyleSheet, TouchableOpacity } from 'react-native';
 import { mockItems } from '../../api/mockData';
-import { getProducts } from '../../api/productsApi';
 import { colors, spacing, typography, radius } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
-import BackHeader from '../../components/composite/BackHeader';
-
-// Backend Product docs don't have `condition`/`size`/`demand` the mock data has,
-// so we normalize into the shape the rest of this screen already expects.
-function normalizeProduct(p) {
-  return {
-    id: p._id,
-    title: p.name,
-    price: p.price,
-    condition: p.condition || 'Good',
-    demand: p.purchaseCount > 5 ? 'high' : 'moderate',
-    size: p.size || '—',
-    category: p.category,
-    imageUrl: p.imageUrl || null,
-  };
-}
 
 const STYLE_BANNERS = [
   { name: 'Vintage',    image: require('../../../assets/item1.jpg') },
@@ -41,44 +24,13 @@ const CATEGORIES = [
 ];
 
 export default function HomeFeedScreen({ navigation }) {
-  const { userPreferences } = useAuth();
+  const { userPreferences, setIsNewUser } = useAuth();
   const preferredCategories = userPreferences?.categories || [];
 
-  // Real products fetched from the backend/database.
-  // Falls back to mockItems if the request fails or the DB has nothing yet,
-  // so the screen still renders something useful while you're testing.
-  const [items, setItems] = useState(mockItems);
-  const [loadingItems, setLoadingItems] = useState(true);
-  const [loadError, setLoadError] = useState('');
-
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      try {
-        const data = await getProducts();
-        const products = (data.products || []).map(normalizeProduct);
-        if (isMounted && products.length > 0) {
-          setItems(products);
-        }
-        if (isMounted) setLoadError('');
-      } catch (error) {
-        if (isMounted) setLoadError(error.message);
-        // keep mockItems as fallback
-      } finally {
-        if (isMounted) setLoadingItems(false);
-      }
-    })();
-    return () => { isMounted = false; };
-  }, []);
-
-  // Set initial active category:
-  // If user selected exactly 1 category in onboarding, start on that chip
-  // If multiple or none, start on 'all'
   const [activeCategory, setActiveCategory] = useState(
     preferredCategories.length === 1 ? preferredCategories[0] : 'all'
   );
 
-  // When preferences load/change, update active category
   useEffect(() => {
     if (preferredCategories.length === 1) {
       setActiveCategory(preferredCategories[0]);
@@ -86,19 +38,15 @@ export default function HomeFeedScreen({ navigation }) {
   }, [userPreferences]);
 
   const filteredItems = (() => {
-    // Specific chip selected — always filter by that
     if (activeCategory !== 'all') {
-      return items.filter((item) => item.category === activeCategory);
+      return mockItems.filter((item) => item.category === activeCategory);
     }
-    // On 'all' chip — if user picked categories in onboarding, show only those
     if (preferredCategories.length > 0) {
-      return items.filter((item) => preferredCategories.includes(item.category));
+      return mockItems.filter((item) => preferredCategories.includes(item.category));
     }
-    // No preferences — show everything
-    return items;
+    return mockItems;
   })();
 
-  // Section heading
   const sectionTitle = (() => {
     if (activeCategory !== 'all') {
       const cat = CATEGORIES.find(c => c.id === activeCategory);
@@ -116,7 +64,15 @@ export default function HomeFeedScreen({ navigation }) {
         <Text style={[typography.subheading, { color: colors.primary, fontWeight: '800', letterSpacing: 1 }]}>
           SMART THRIFT
         </Text>
-        <View style={{ flexDirection: 'row', gap: spacing.md }}>
+        <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+          {/* Edit style preferences button */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('StylePreference', { editing: true })}
+            style={styles.editStyleBtn}
+          >
+            <Text style={{ fontSize: 14 }}>🎨</Text>
+            <Text style={styles.editStyleText}>Style</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
             <Text style={{ fontSize: 20 }}>🔍</Text>
           </TouchableOpacity>
@@ -138,7 +94,6 @@ export default function HomeFeedScreen({ navigation }) {
       >
         {CATEGORIES.map((cat) => {
           const isActive = activeCategory === cat.id;
-          // Highlight chip if it's in preferred categories (when on 'all')
           const isPreferred = activeCategory === 'all' && preferredCategories.includes(cat.id);
           return (
             <Pressable
@@ -195,7 +150,10 @@ export default function HomeFeedScreen({ navigation }) {
         </ScrollView>
 
         {/* Market Insight */}
-        <View style={styles.demandBanner}>
+        <Pressable
+          style={styles.demandBanner}
+          onPress={() => navigation.navigate('DemandInsights')}
+        >
           <View style={{ flex: 1 }}>
             <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '700' }]}>
               MARKET INSIGHT
@@ -209,7 +167,7 @@ export default function HomeFeedScreen({ navigation }) {
             <Text style={{ color: colors.accentGreen, fontWeight: '800', fontSize: 16 }}>+24%</Text>
             <Text style={{ fontSize: 16 }}>📈</Text>
           </View>
-        </View>
+        </Pressable>
 
         {/* Recommended */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.lg, marginBottom: spacing.sm }}>
@@ -223,19 +181,34 @@ export default function HomeFeedScreen({ navigation }) {
           contentContainerStyle={{ gap: spacing.sm }}
         >
           {(preferredCategories.length > 0
-            ? items.filter(i => preferredCategories.includes(i.category))
-            : items
+            ? mockItems.filter(i => preferredCategories.includes(i.category))
+            : mockItems
           ).slice(0, 4).map((item) => {
             const imgSource = typeof item.imageUrl === 'number' ? item.imageUrl : { uri: item.imageUrl };
+            const isSold = item.sold === true || item.available === false;
             return (
               <Pressable
                 key={item.id}
-                onPress={() => navigation.navigate('ProductDetail', { item })}
+                onPress={() => !isSold && navigation.navigate('ProductDetail', { item })}
                 style={styles.horizontalCard}
+                disabled={isSold}
               >
                 <View style={styles.horizontalImageWrap}>
-                  <Image source={imgSource} style={styles.horizontalImage} resizeMode="cover" />
-                  {item.demand === 'high' && (
+                  <Image
+                    source={imgSource}
+                    style={[styles.horizontalImage, isSold && { opacity: 0.4 }]}
+                    resizeMode="cover"
+                  />
+                  {isSold ? (
+                    <View style={styles.soldBadge}>
+                      <Text style={styles.soldBadgeText}>SOLD OUT</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.availableBadge}>
+                      <Text style={styles.availableBadgeText}>Available</Text>
+                    </View>
+                  )}
+                  {!isSold && item.demand === 'high' && (
                     <View style={styles.demandBadge}>
                       <Text style={styles.demandBadgeText}>High Demand</Text>
                     </View>
@@ -273,15 +246,30 @@ export default function HomeFeedScreen({ navigation }) {
           <View style={styles.verticalGrid}>
             {filteredItems.map((item) => {
               const imgSource = typeof item.imageUrl === 'number' ? item.imageUrl : { uri: item.imageUrl };
+              const isSold = item.sold === true || item.available === false;
               return (
                 <Pressable
                   key={item.id}
-                  onPress={() => navigation.navigate('ProductDetail', { item })}
+                  onPress={() => !isSold && navigation.navigate('ProductDetail', { item })}
                   style={styles.gridCard}
+                  disabled={isSold}
                 >
                   <View style={styles.gridImageWrap}>
-                    <Image source={imgSource} style={styles.gridImage} resizeMode="cover" />
-                    {item.demand === 'high' && (
+                    <Image
+                      source={imgSource}
+                      style={[styles.gridImage, isSold && { opacity: 0.4 }]}
+                      resizeMode="cover"
+                    />
+                    {isSold ? (
+                      <View style={styles.soldBadge}>
+                        <Text style={styles.soldBadgeText}>SOLD OUT</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.availableBadge}>
+                        <Text style={styles.availableBadgeText}>Available</Text>
+                      </View>
+                    )}
+                    {!isSold && item.demand === 'high' && (
                       <View style={styles.demandBadge}>
                         <Text style={styles.demandBadgeText}>High Demand</Text>
                       </View>
@@ -314,41 +302,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border,
   },
+  editStyleBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: colors.surface, borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm, paddingVertical: 4,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  editStyleText: { fontSize: 11, fontWeight: '700', color: colors.primary },
   categoryBar: { borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: spacing.sm },
   categoryChip: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
     borderRadius: radius.pill, backgroundColor: colors.surface, gap: spacing.xs,
   },
-  categoryChipActive:    { backgroundColor: colors.primary },
-  categoryChipPreferred: { backgroundColor: colors.primaryTeal + '33', borderWidth: 1, borderColor: colors.primaryTeal },
-  categoryChipText:      { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  categoryChipTextActive:{ color: '#FFFFFF' },
+  categoryChipActive:     { backgroundColor: colors.primary },
+  categoryChipPreferred:  { backgroundColor: colors.primaryTeal + '33', borderWidth: 1, borderColor: colors.primaryTeal },
+  categoryChipText:       { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+  categoryChipTextActive: { color: '#FFFFFF' },
   preferenceBanner: {
     backgroundColor: colors.primaryTeal + '15',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.primaryTeal + '30',
+    paddingHorizontal: spacing.md, paddingVertical: 6,
+    borderBottomWidth: 1, borderBottomColor: colors.primaryTeal + '30',
   },
-  bannerTile:     { width: 100, height: 120, borderRadius: radius.md, overflow: 'hidden' },
-  bannerImage:    { width: '100%', height: '100%' },
-  bannerOverlay:  { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.28)' },
-  bannerLabelWrap:{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 6 },
-  bannerLabel:    { color: '#FFFFFF', fontWeight: '700', fontSize: 11 },
+  bannerTile:      { width: 100, height: 120, borderRadius: radius.md, overflow: 'hidden' },
+  bannerImage:     { width: '100%', height: '100%' },
+  bannerOverlay:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.28)' },
+  bannerLabelWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 6 },
+  bannerLabel:     { color: '#FFFFFF', fontWeight: '700', fontSize: 11 },
   demandBanner: {
     backgroundColor: colors.surface, borderRadius: radius.md,
     padding: spacing.md, flexDirection: 'row', alignItems: 'center',
   },
-  horizontalCard:     { width: 156 },
-  horizontalImageWrap:{ width: 156, height: 176, borderRadius: radius.md, overflow: 'hidden' },
-  horizontalImage:    { width: '100%', height: '100%' },
+  horizontalCard:      { width: 156 },
+  horizontalImageWrap: { width: 156, height: 176, borderRadius: radius.md, overflow: 'hidden' },
+  horizontalImage:     { width: '100%', height: '100%' },
   demandBadge: {
     position: 'absolute', top: spacing.xs, left: spacing.xs,
     backgroundColor: colors.accentGreen,
     paddingHorizontal: spacing.xs, paddingVertical: 2, borderRadius: radius.pill,
   },
   demandBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' },
+  soldBadge: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  soldBadgeText: {
+    color: '#FFFFFF', fontSize: 13, fontWeight: '800', letterSpacing: 1,
+    borderWidth: 1.5, borderColor: '#FFFFFF',
+    paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.sm,
+  },
+  availableBadge: {
+    position: 'absolute', bottom: spacing.xs, right: spacing.xs,
+    backgroundColor: colors.accentGreen,
+    paddingHorizontal: spacing.xs, paddingVertical: 2, borderRadius: radius.pill,
+  },
+  availableBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' },
   verticalGrid:  { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   gridCard:      { width: '47%' },
   gridImageWrap: { width: '100%', aspectRatio: 0.85, borderRadius: radius.md, overflow: 'hidden' },

@@ -8,7 +8,7 @@ const RECENT = ['90s Leather Blazer', 'Silk Scarf', 'Raw Indigo'];
 const CATEGORIES = [
   { name: 'Outerwear', color: colors.primaryTeal, icon: '🧥' },
   { name: 'Timepieces', color: colors.lightBlue, icon: '⌚' },
-  { name: 'Rare Finds', color: colors.surface, icon: '🔍' },
+  { name: 'Rare Finds', color: '#E8F4F8', icon: '🔍' },
   { name: 'Archival Shoes', color: colors.danger, icon: '👟' },
 ];
 

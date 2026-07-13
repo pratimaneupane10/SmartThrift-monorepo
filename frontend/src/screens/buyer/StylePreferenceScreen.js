@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing, typography, radius } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 
@@ -30,13 +31,23 @@ const CLOTHING_CATEGORIES = [
   { id: 'joggers',   label: 'Joggers',   icon: null,  text: 'JG',   color: '#F1F8E9' },
 ];
 
-export default function StylePreferenceScreen({ navigation }) {
-  const { completeOnboarding } = useAuth();
+export default function StylePreferenceScreen({ navigation, route }) {
+  const { completeOnboarding, userPreferences } = useAuth();
 
-  const [selectedAge,        setSelectedAge]        = useState(null);
-  const [selectedBody,       setSelectedBody]       = useState(null);
-  const [selectedStyles,     setSelectedStyles]     = useState([]);
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedAge,        setSelectedAge]        = useState(userPreferences?.age        || null);
+  const [selectedBody,       setSelectedBody]       = useState(userPreferences?.bodyType   || null);
+  const [selectedStyles,     setSelectedStyles]     = useState(userPreferences?.styles     || []);
+  const [selectedCategories, setSelectedCategories] = useState(userPreferences?.categories || []);
+  const [photoUri,           setPhotoUri]           = useState(userPreferences?.photoUri   || null);
+
+  // FIX: previously this was `navigation.canGoBack()`, which is unreliable —
+  // it can resolve `true` even when this screen is the only route in the
+  // onboarding stack, causing handleContinue to take the "edit" branch and
+  // call navigation.goBack() with nothing to go back to (GO_BACK error),
+  // leaving the user stuck on this screen instead of reaching HomeFeed.
+  // Now this is explicit: only treat this as "editing" if the screen was
+  // navigated to with a `{ editing: true }` param (e.g. from Settings/Profile).
+  const isEditing = route?.params?.editing === true;
 
   function toggleStyle(name) {
     setSelectedStyles((prev) =>
@@ -50,11 +61,42 @@ export default function StylePreferenceScreen({ navigation }) {
     );
   }
 
+  async function handleUploadPhoto() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission Needed',
+        'Please allow photo library access to upload a photo for better recommendations.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [3, 4],
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets?.length > 0) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  }
+
   const allSelected =
     selectedStyles.length > 0 &&
     selectedAge !== null &&
     selectedBody !== null;
 
+  // ---- FIX ----
+  // Previously, navigation.navigate('MainTabs') only ran when `completeOnboarding`
+  // was falsy. In a real app `completeOnboarding` always exists (it comes from
+  // useAuth()), so that branch never ran and the screen never moved forward —
+  // it silently relied on some parent/root navigator reacting to a context
+  // state change that may not have been wired up. We now ALWAYS navigate
+  // explicitly after validation + saving, regardless of whether
+  // completeOnboarding is present. This guarantees the Continue button works
+  // even if AuthContext/root navigator isn't (yet) set up to auto-redirect.
   function handleContinue() {
     if (selectedStyles.length === 0) {
       Alert.alert('Required', 'Please select at least one style.');
@@ -68,29 +110,50 @@ export default function StylePreferenceScreen({ navigation }) {
       Alert.alert('Required', 'Please select your body type.');
       return;
     }
+
     if (completeOnboarding) {
       completeOnboarding({
         styles:     selectedStyles,
         age:        selectedAge,
         bodyType:   selectedBody,
         categories: selectedCategories,
+        photoUri:   photoUri,
       });
-    } else {
-      navigation.navigate('MainTabs');
+    }
+
+    if (isEditing) {
+      Alert.alert('Saved!', 'Your style preferences have been updated.', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+      return;
     }
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F5FAF5' }}>
       <View style={screenStyles.topBar}>
+        {isEditing ? (
+          <Pressable
+            style={screenStyles.backBtn}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={{ fontSize: 22, color: colors.primary, fontWeight: '600' }}>{'‹'}</Text>
+          </Pressable>
+        ) : (
+          <View style={screenStyles.backBtn} />
+        )}
         <Text style={screenStyles.brandText}>SMART THRIFT</Text>
-        <View style={screenStyles.dotsRow}>
-          <View style={[screenStyles.dot, { backgroundColor: colors.border }]} />
-          <View style={[screenStyles.dot, { backgroundColor: colors.primary }]} />
-          <View style={[screenStyles.dot, { backgroundColor: colors.border }]} />
-        </View>
+        {isEditing ? (
+          <View style={{ width: 48 }} />
+        ) : (
+          <View style={screenStyles.dotsRow}>
+            <View style={[screenStyles.dot, { backgroundColor: colors.border }]} />
+            <View style={[screenStyles.dot, { backgroundColor: colors.primary }]} />
+            <View style={[screenStyles.dot, { backgroundColor: colors.border }]} />
+          </View>
+        )}
         <View style={screenStyles.gearBtn}>
-          <Text style={{ fontSize: 18 }}>⚙</Text>
+          <Text style={{ fontSize: 18 }}>🛍</Text>
         </View>
       </View>
 
@@ -238,15 +301,38 @@ export default function StylePreferenceScreen({ navigation }) {
           })}
         </View>
 
-        {/* Pro tip */}
+        {/* Pro tip / photo upload */}
         <View style={screenStyles.proTipBox}>
           <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '700' }}>✦ Pro Tip</Text>
           <Text style={[typography.body, { marginTop: spacing.xs }]}>
-            Connecting your health data or uploading a photo can improve recommendation accuracy by up to 40%.
+            Uploading a photo can improve recommendation accuracy by up to 40%.
           </Text>
-          <Text style={[typography.body, { fontWeight: '700', marginTop: spacing.sm }]}>
-            Add specific measurements →
-          </Text>
+
+          {photoUri ? (
+            <View style={screenStyles.photoPreviewRow}>
+              <Image source={{ uri: photoUri }} style={screenStyles.photoThumb} />
+              <View style={{ flex: 1, marginLeft: spacing.md }}>
+                <Text style={[typography.caption, { color: colors.accentGreen, fontWeight: '700' }]}>
+                  Photo added ✓
+                </Text>
+                <Pressable onPress={handleUploadPhoto}>
+                  <Text style={[typography.caption, { color: colors.primaryTeal, fontWeight: '700', marginTop: 2 }]}>
+                    Change photo
+                  </Text>
+                </Pressable>
+              </View>
+              <Pressable onPress={() => setPhotoUri(null)}>
+                <Text style={{ fontSize: 16, color: colors.textSecondary }}>✕</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable style={screenStyles.uploadBtn} onPress={handleUploadPhoto}>
+              <Text style={{ fontSize: 16 }}>📷</Text>
+              <Text style={{ color: colors.primary, fontWeight: '700', marginLeft: spacing.xs }}>
+                Upload a photo
+              </Text>
+            </Pressable>
+          )}
         </View>
 
         {/* Continue */}
@@ -254,12 +340,16 @@ export default function StylePreferenceScreen({ navigation }) {
           style={[screenStyles.continueBtn, !allSelected && screenStyles.continueBtnDisabled]}
           onPress={handleContinue}
         >
-          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>Continue</Text>
+          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>
+            {isEditing ? 'Save Preferences' : 'Continue'}
+          </Text>
         </Pressable>
 
-        <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md, marginBottom: spacing.xl }]}>
-          Step 2 of 5
-        </Text>
+        {!isEditing && (
+          <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md, marginBottom: spacing.xl }]}>
+            Step 2 of 5
+          </Text>
+        )}
       </ScrollView>
     </View>
   );
@@ -273,6 +363,10 @@ const screenStyles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
+  },
+  backBtn: {
+    width: 36, height: 36, borderRadius: 999,
+    justifyContent: 'center', alignItems: 'center',
   },
   brandText: {
     fontSize: 16,
@@ -345,6 +439,20 @@ const screenStyles = StyleSheet.create({
   proTipBox: {
     backgroundColor: '#FFF5F5', borderRadius: radius.md,
     padding: spacing.md, marginTop: spacing.xl,
+  },
+  uploadBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#FFFFFF', borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.primary,
+    padding: spacing.sm, marginTop: spacing.md,
+  },
+  photoPreviewRow: {
+    flexDirection: 'row', alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  photoThumb: {
+    width: 56, height: 56, borderRadius: radius.md,
+    backgroundColor: colors.surface,
   },
   continueBtn: {
     backgroundColor: colors.primary, borderRadius: radius.md,

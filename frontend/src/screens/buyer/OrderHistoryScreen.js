@@ -1,256 +1,189 @@
+import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, Image } from 'react-native';
 import { colors, spacing, typography, radius } from '../../theme/theme';
-import BackHeader from '../../components/composite/BackHeader';
 
-const ORDERS = [
+const BUYER_ORDERS = [
   {
     id: '#12346',
     date: 'October 18, 2023',
     status: 'IN TRANSIT',
     estDelivery: 'Oct 24, 2023',
+    seller: 'Maya Store',
     items: [
       { id: '1', title: 'Vintage Denim Jacket', price: 1200, qty: 1, image: require('../../../assets/item1.jpg') },
-      { id: '2', title: 'Wool Overcoat',         price: 3145, qty: 1, image: require('../../../assets/item3.jpg') },
+      { id: '2', title: 'Wool Overcoat', price: 3145, qty: 1, image: require('../../../assets/item3.jpg') },
     ],
+    subtotal: 4345,
+    total: 4540,
   },
   {
     id: '#12345',
     date: 'September 12, 2023',
     status: 'DELIVERED',
+    seller: 'Aarav Shop',
     items: [
-      { id: '3', title: 'Brown Leather Jacket', price: 6585, qty: 1, image: require('../../../assets/item6.jpg') },
+      { id: '3', title: 'Ankle Boots', price: 2500, qty: 2, image: require('../../../assets/item6.jpg') },
     ],
+    subtotal: 5000,
+    total: 5195,
   },
   {
     id: '#12344',
     date: 'September 20, 2023',
     status: 'RETURNED',
+    seller: 'Priya Store',
     items: [
-      { id: '4', title: 'Black Hoodie', price: 1145, qty: 1, image: require('../../../assets/item4.jpg') },
+      { id: '4', title: 'Plain White Tee', price: 900, qty: 3, image: require('../../../assets/item5.jpg') },
     ],
+    subtotal: 2700,
+    total: 2895,
   },
 ];
 
-const STATUS_CONFIG = {
-  'IN TRANSIT': { color: colors.amber,      label: 'In Transit' },
-  'DELIVERED':  { color: colors.accentGreen, label: 'Delivered'  },
-  'RETURNED':   { color: colors.danger,      label: 'Returned'   },
+const STATUS_COLORS = {
+  'IN TRANSIT': colors.amber,
+  'DELIVERED': colors.accentGreen,
+  'RETURNED': colors.danger,
+  'PROCESSING': colors.primaryTeal,
+  'CANCELLED': colors.danger,
 };
 
-const PROGRESS_STEPS = ['ORDERED', 'PROCESSED', 'SHIPPED', 'DELIVERED'];
-const PROGRESS_INDEX = { 'IN TRANSIT': 2, 'DELIVERED': 3, 'RETURNED': 1 };
-
 export default function OrderHistoryScreen({ navigation }) {
+  const [filter, setFilter] = useState('All');
+
+  const filtered = filter === 'All'
+    ? BUYER_ORDERS
+    : BUYER_ORDERS.filter((o) => o.status === filter);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-
-      {/* Header */}
-      <BackHeader
-  title="Order History"
-  onBack={() => navigation.goBack()}
-  rightIcon="🛍"
-/>
-
-      <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
-        <Text style={[typography.caption, { color: colors.primaryTeal, fontWeight: '700', letterSpacing: 1 }]}>
-          PURCHASE JOURNEY
+      <View style={styles.header}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Text style={styles.backArrow}>{'<'}</Text>
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+        <Text style={typography.subheading}>Order History</Text>
+        <Text style={[typography.caption, { color: colors.primaryTeal }]}>
+          {BUYER_ORDERS.length} orders
         </Text>
-        <Text style={[typography.heading, { fontSize: 28, marginTop: spacing.xs }]}>Order History</Text>
-        <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.lg }]}>
-          Track your curated acquisitions and review past deliveries from our verified sellers.
-        </Text>
+      </View>
 
-        {ORDERS.map((order) => {
-          const statusCfg    = STATUS_CONFIG[order.status];
-          const progressStep = PROGRESS_INDEX[order.status] || 0;
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ maxHeight: 50, paddingHorizontal: spacing.md }}
+        contentContainerStyle={{ alignItems: 'center' }}
+      >
+        {['All', 'IN TRANSIT', 'DELIVERED', 'RETURNED'].map((f) => (
+          <Pressable
+            key={f}
+            onPress={() => setFilter(f)}
+            style={[styles.filterChip, filter === f && styles.filterChipActive]}
+          >
+            <Text style={{ color: filter === f ? '#FFFFFF' : colors.textPrimary, fontSize: 12 }}>
+              {f}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
 
-          return (
-            <View key={order.id} style={styles.orderCard}>
+      <ScrollView contentContainerStyle={{ padding: spacing.md }}>
+        {filtered.map((order) => (
+          <Pressable
+            key={order.id}
+            style={styles.orderCard}
+            onPress={() => navigation.navigate('OrderDetail', { order })}
+          >
+            <View style={styles.orderHeader}>
+              <View>
+                <Text style={typography.subheading}>{order.id}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                  {order.date} · {order.seller}
+                </Text>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[order.status] + '22' }]}>
+                <Text style={{ color: STATUS_COLORS[order.status], fontSize: 11, fontWeight: '700' }}>
+                  {order.status}
+                </Text>
+              </View>
+            </View>
 
-              {/* Status row */}
-              <View style={styles.orderHeader}>
-                <View style={[styles.statusBadge, { backgroundColor: statusCfg.color + '22' }]}>
-                  <Text style={[typography.caption, { color: statusCfg.color, fontWeight: '700' }]}>
-                    {statusCfg.label}
+            {order.status === 'IN TRANSIT' && order.estDelivery && (
+              <Text style={[typography.caption, { color: colors.amber, marginBottom: spacing.sm }]}>
+                {'Est. Delivery: ' + order.estDelivery}
+              </Text>
+            )}
+
+            {order.items.map((item) => (
+              <View key={item.id} style={styles.itemRow}>
+                <Image source={item.image} style={styles.itemImage} />
+                <View style={{ flex: 1, marginLeft: spacing.md }}>
+                  <Text style={typography.subheading} numberOfLines={1}>{item.title}</Text>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                    {'Qty: ' + item.qty + ' × NPR ' + item.price}
+                  </Text>
+                  <Text style={{ color: colors.accentGreen, fontWeight: '700' }}>
+                    {'NPR ' + (item.price * item.qty)}
                   </Text>
                 </View>
-                {order.estDelivery && (
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                    Est. {order.estDelivery}
-                  </Text>
+              </View>
+            ))}
+
+            <View style={styles.orderFooter}>
+              <Text style={[typography.subheading, { color: colors.primary }]}>
+                {'Total: NPR ' + order.total}
+              </Text>
+              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                {order.status === 'IN TRANSIT' && (
+                  <Pressable
+                    style={styles.trackBtn}
+                    onPress={() => navigation.navigate('TrackOrder')}
+                  >
+                    <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>
+                      Track Package
+                    </Text>
+                  </Pressable>
+                )}
+                {order.status === 'DELIVERED' && (
+                  <Pressable
+                    style={styles.reviewBtn}
+                    onPress={() => navigation.navigate('ProductReviews', { item: order.items[0] })}
+                  >
+                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>
+                      Write Review
+                    </Text>
+                  </Pressable>
+                )}
+                {order.status === 'RETURNED' && (
+                  <Pressable style={styles.refundBtn}>
+                    <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '700' }}>
+                      View Refund
+                    </Text>
+                  </Pressable>
                 )}
               </View>
-
-              {/* Order meta */}
-              <Text style={[typography.subheading, { marginTop: spacing.sm }]}>Order {order.id}</Text>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                Placed on {order.date} · {order.items.length} item{order.items.length > 1 ? 's' : ''}
-              </Text>
-
-              {/* Track button */}
-              {order.status === 'IN TRANSIT' && (
-                <Pressable style={styles.trackBtn} onPress={() => navigation.navigate('TrackOrder')}>
-  <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>📦 Track Package</Text>
-</Pressable>
-              )}
-
-              {/* Progress bar */}
-              <View style={styles.progressWrap}>
-                {PROGRESS_STEPS.map((step, i) => {
-                  const active = i <= progressStep;
-                  return (
-                    <View key={step} style={styles.progressStep}>
-                      {i > 0 && (
-                        <View style={[styles.progressLine, active && { backgroundColor: statusCfg.color }]} />
-                      )}
-                      <View style={[styles.progressDot, active && { backgroundColor: statusCfg.color }]} />
-                      <Text style={[styles.progressLabel, active && { color: statusCfg.color }]}>
-                        {step}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-
-              {/* Items */}
-              {order.items.map((item) => (
-                <View key={item.id} style={styles.itemRow}>
-                  <View style={styles.itemImageWrap}>
-                    <Image
-                      source={item.image}
-                      style={styles.itemImage}
-                      resizeMode="cover"
-                    />
-                  </View>
-                  <View style={{ flex: 1, marginLeft: spacing.md }}>
-                    <Text style={typography.subheading} numberOfLines={1}>{item.title}</Text>
-                    <Text style={[typography.caption, { color: colors.textSecondary }]}>Qty: {item.qty}</Text>
-                    <Text style={[typography.body, { color: colors.accentGreen, fontWeight: '700' }]}>
-                      NPR {item.price}.00
-                    </Text>
-                  </View>
-                </View>
-              ))}
-
-              {/* Action buttons */}
-              {order.status === 'DELIVERED' && (
-                <Pressable style={styles.buyAgainBtn}>
-                  <Text style={[typography.body, { fontWeight: '700' }]}>Buy Again</Text>
-                </Pressable>
-              )}
-              {order.status === 'RETURNED' && (
-                <Pressable style={styles.refundBtn}>
-                  <Text style={[typography.body, { fontWeight: '700', color: colors.danger }]}>
-                    View Refund Status
-                  </Text>
-                </Pressable>
-              )}
             </View>
-          );
-        })}
+          </Pressable>
+        ))}
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  orderCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
-  trackBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  progressWrap: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginVertical: spacing.md,
-  },
-  progressStep: {
-    flex: 1,
-    alignItems: 'center',
-    position: 'relative',
-  },
-  progressLine: {
-    position: 'absolute',
-    top: 5,
-    left: '-50%',
-    right: '50%',
-    height: 2,
-    backgroundColor: colors.border,
-  },
-  progressDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.border,
-    zIndex: 1,
-  },
-  progressLabel: {
-    fontSize: 8,
-    marginTop: 4,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  itemImageWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.sm,
-    overflow: 'hidden',
-    backgroundColor: colors.border,
-  },
-  itemImage: {
-    width: '100%',
-    height: '100%',
-  },
-  buyAgainBtn: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  refundBtn: {
-    borderWidth: 1,
-    borderColor: colors.danger,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
+  backBtn: { flexDirection: 'row', alignItems: 'center', minWidth: 70 },
+  backArrow: { fontSize: 36, color: colors.primary, fontWeight: '300', lineHeight: 40 },
+  backText: { fontSize: 16, color: colors.primary, fontWeight: '600' },
+  filterChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill, backgroundColor: colors.surface, marginRight: spacing.xs },
+  filterChipActive: { backgroundColor: colors.primary },
+  orderCard: { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md },
+  orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.sm },
+  statusBadge: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.pill },
+  itemRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
+  itemImage: { width: 60, height: 60, borderRadius: radius.sm },
+  orderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, marginTop: spacing.sm },
+  trackBtn: { backgroundColor: colors.primary, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  reviewBtn: { borderWidth: 1, borderColor: colors.primary, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  refundBtn: { borderWidth: 1, borderColor: colors.danger, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
 });

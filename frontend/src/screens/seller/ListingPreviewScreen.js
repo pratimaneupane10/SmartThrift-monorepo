@@ -8,6 +8,7 @@ export default function ListingPreviewScreen({ route, navigation }) {
   const price = listing?.price || 2800;
   const size = listing?.size || 'S';
   const material = listing?.material || 'Full-Grain Leather';
+  const condition = listing?.condition || 'Good';
   const image = listing?.image || require('../../../assets/item6.jpg');
 
   const imgSource = typeof image === 'string' ? { uri: image } : image;
@@ -75,7 +76,11 @@ export default function ListingPreviewScreen({ route, navigation }) {
 
           <Pressable
             style={styles.publishBtn}
-            onPress={() => navigation.navigate('ListingPublished')}
+            onPress={() =>
+              navigation.navigate('ListingPublished', {
+                listing: { title, price, condition, size, material },
+              })
+            }
           >
             <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>
               PUBLISH LISTING

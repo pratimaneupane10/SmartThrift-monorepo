@@ -1,58 +1,50 @@
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Pressable } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Pressable, ScrollView } from 'react-native';
 import { colors, spacing, radius, typography } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
-import BackHeader from '../../components/composite/BackHeader';
-
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-}
 
 export default function LoginScreen({ navigation }) {
-  const [email,        setEmail]        = useState('');
-  const [password,     setPassword]     = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [emailError,   setEmailError]   = useState('');
-  const [passError,    setPassError]    = useState('');
-  const { login, authLoading } = useAuth();
+  const { login } = useAuth();
 
-  function validate() {
-    let valid = true;
-    setEmailError('');
-    setPassError('');
-
-    if (!email.trim()) {
-      setEmailError('Email is required.'); valid = false;
-    } else if (!isValidEmail(email)) {
-      setEmailError('Enter a valid email e.g. name@example.com'); valid = false;
-    }
-
-    if (!password) {
-      setPassError('Password is required.'); valid = false;
-    } else if (password.length < 6) {
-      setPassError('Password must be at least 6 characters.'); valid = false;
-    }
-
-    return valid;
+  function handleGoogleLogin() {
+    Alert.alert(
+      'Google Login',
+      'In production this opens Google OAuth. For demo, logging in as Google user.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          onPress: () => login('googleuser@gmail.com', 'google', 'buyer', 'google'),
+        },
+      ]
+    );
   }
 
-  async function handleLogin() {
-    if (!validate()) return;
-    const result = await login(email.trim(), password);
-    if (!result.success) {
-      Alert.alert('Login failed', result.message || 'Invalid email or password.');
+  function handleLogin() {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
+      return;
     }
+    login(email, password, 'buyer', 'email');
   }
 
   return (
     <View style={styles.page}>
       <View style={styles.hero} />
-      <View style={styles.card}>
+      <ScrollView
+        style={styles.card}
+        contentContainerStyle={{ paddingBottom: spacing.xl * 2 }}
+        showsVerticalScrollIndicator={false}
+      >
         <Pressable
           onPress={() => navigation.navigate('Welcome')}
           style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}
         >
-          <Text style={{ fontSize: 18, color: colors.primaryTeal }}>← Back</Text>
+          <Text style={{ fontSize: 28, color: colors.primaryTeal, fontWeight: '300' }}>{'<'}</Text>
+          <Text style={{ fontSize: 16, color: colors.primaryTeal, fontWeight: '600' }}> Back</Text>
         </Pressable>
 
         <View style={styles.avatarCircle}>
@@ -66,9 +58,8 @@ export default function LoginScreen({ navigation }) {
           Sign in to your ethical marketplace account
         </Text>
 
-        {/* Email */}
         <Text style={styles.label}>EMAIL ADDRESS</Text>
-        <View style={[styles.inputRow, emailError && styles.inputError]}>
+        <View style={styles.inputRow}>
           <Text style={{ marginRight: spacing.sm }}>✉</Text>
           <TextInput
             placeholder="name@example.com"
@@ -77,48 +68,47 @@ export default function LoginScreen({ navigation }) {
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
-            onChangeText={(t) => { setEmail(t); setEmailError(''); }}
+            onChangeText={setEmail}
           />
-          {isValidEmail(email) && <Text style={styles.validTick}>✓</Text>}
         </View>
-        {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
-        {/* Password */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.md }}>
           <Text style={styles.label}>PASSWORD</Text>
-          <Text style={{ color: colors.primaryTeal, fontSize: 12 }}>Forgot Password?</Text>
+          <Pressable onPress={() => navigation.navigate('ForgotPassword')}>
+            <Text style={{ color: colors.primaryTeal, fontSize: 12, fontWeight: '700' }}>
+              Forgot Password?
+            </Text>
+          </Pressable>
         </View>
-        <View style={[styles.inputRow, passError && styles.inputError]}>
+        <View style={styles.inputRow}>
           <Text style={{ marginRight: spacing.sm }}>🔒</Text>
           <TextInput
-            placeholder="Min. 6 characters"
+            placeholder="••••••••"
             placeholderTextColor={colors.textSecondary}
             style={styles.inputField}
             secureTextEntry={!showPassword}
             value={password}
-            onChangeText={(t) => { setPassword(t); setPassError(''); }}
+            onChangeText={setPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Text style={{ fontSize: 16 }}>{showPassword ? '🙈' : '👁'}</Text>
+            <Text>{showPassword ? '🙈' : '👁'}</Text>
           </TouchableOpacity>
         </View>
-        {passError ? <Text style={styles.errorText}>{passError}</Text> : null}
 
-        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={authLoading}>
-          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>
-            {authLoading ? 'Logging in…' : 'Login →'}
-          </Text>
+        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>Login →</Text>
         </TouchableOpacity>
 
         <Text style={[typography.caption, { textAlign: 'center', marginVertical: spacing.md, color: colors.textSecondary }]}>
           OR CONTINUE WITH
         </Text>
 
-        <TouchableOpacity style={styles.googleBtn} onPress={handleLogin}>
-          <Text style={{ fontWeight: '600', color: colors.textPrimary }}>G  Google</Text>
+        <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin}>
+          <Text style={{ fontSize: 18, marginRight: spacing.sm }}>G</Text>
+          <Text style={{ fontWeight: '600', color: colors.textPrimary }}>Continue with Google</Text>
         </TouchableOpacity>
 
-        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg, marginBottom: spacing.md }}>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>
             Don't have an account?{' '}
           </Text>
@@ -128,22 +118,19 @@ export default function LoginScreen({ navigation }) {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  page:         { flex: 1, backgroundColor: '#E8F5E9' },
-  hero:         { flex: 1 },
-  card:         { backgroundColor: colors.background, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg, paddingBottom: spacing.xl },
+  page: { flex: 1, backgroundColor: '#E8F5E9' },
+  hero: { height: 120 },
+  card: { flex: 1, backgroundColor: colors.background, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg },
   avatarCircle: { width: 60, height: 60, borderRadius: 999, backgroundColor: colors.mintIcon, justifyContent: 'center', alignItems: 'center', alignSelf: 'center' },
-  label:        { fontSize: 11, fontWeight: '700', color: colors.textSecondary, letterSpacing: 1, marginBottom: spacing.xs },
-  inputRow:     { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.sm, padding: spacing.md },
-  inputError:   { borderWidth: 1, borderColor: colors.danger },
-  inputField:   { flex: 1, color: colors.textPrimary, fontSize: 14 },
-  validTick:    { color: colors.accentGreen, fontSize: 14, fontWeight: '700' },
-  errorText:    { color: colors.danger, fontSize: 11, marginTop: 4, marginLeft: 2 },
-  loginBtn:     { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.lg },
-  googleBtn:    { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, alignItems: 'center' },
+  label: { fontSize: 11, fontWeight: '700', color: colors.textSecondary, letterSpacing: 1, marginBottom: spacing.xs },
+  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.sm, padding: spacing.md },
+  inputField: { flex: 1, color: colors.textPrimary, fontSize: 14 },
+  loginBtn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.lg },
+  googleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md },
 });

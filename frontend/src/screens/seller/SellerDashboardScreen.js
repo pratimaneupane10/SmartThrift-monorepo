@@ -1,219 +1,170 @@
-import { View, Text, ScrollView, Pressable, StyleSheet, Image } from 'react-native';
+import { useState } from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet, Image, Alert } from 'react-native';
 import { colors, spacing, typography, radius } from '../../theme/theme';
-import BackHeader from '../../components/composite/BackHeader';
 
-const LISTINGS = [
-  {
-    id: '1',
-    title: ' Black Nike Shorts',
-    price: 1200,
-    status: 'ACTIVE',
-    views: 423,
-    image: require('../../../assets/item5.jpg'),
-  },
-  {
-    id: '2',
-    title: 'White Dress Shirt',
-    price: 2268,
-    status: 'ACTIVE',
-    views: 234,
-    image: require('../../../assets/item2.jpg'),
-  },
-  {
-    id: '3',
-    title: 'Marron Pullover Hoodie',
-    price: 2265,
-    status: 'SOLD',
-    views: 89,
-    image: require('../../../assets/item4.jpg'),
-  },
+const INITIAL_LISTINGS = [
+  { id: '1', title: 'Premium Cashmere Sweater', price: 185, status: 'ACTIVE', views: 423, image: require('../../../assets/item2.jpg'), sold: false },
+  { id: '2', title: 'Limited Edition Sneakers', price: 240, status: 'ACTIVE', views: 234, image: require('../../../assets/item6.jpg'), sold: false },
+  { id: '3', title: 'Graphic Print Hoodie', price: 2265, status: 'SOLD', views: 89, image: require('../../../assets/item4.jpg'), sold: true },
 ];
 
 export default function SellerDashboardScreen({ navigation }) {
+  const [listings, setListings] = useState(INITIAL_LISTINGS);
+
+  function toggleSold(id) {
+    setListings((prev) =>
+      prev.map((l) =>
+        l.id === id
+          ? { ...l, sold: !l.sold, status: l.sold ? 'ACTIVE' : 'SOLD' }
+          : l
+      )
+    );
+  }
+
+  function deleteListing(id) {
+    Alert.alert('Delete Listing', 'Are you sure you want to delete this listing?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => setListings((prev) => prev.filter((l) => l.id !== id)) },
+    ]);
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-
-    <BackHeader
-  title="My Shop"
-  onBack={() => navigation.goBack()}
-  rightIcon="⚙"
-/>
+      <View style={styles.header}>
+        <Text style={[typography.subheading, { color: colors.primary, fontWeight: '800' }]}>
+          SMART THRIFT
+        </Text>
+        <Pressable onPress={() => navigation.navigate('SellerSettings')}>
+          <Text style={{ fontSize: 20 }}>🛍</Text>
+        </Pressable>
+      </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.md }}>
-
-        {/* Stats row */}
         <View style={styles.statsRow}>
-          {[
-            { icon: '📋', value: '12',  delta: '+5 this week', label: 'ACTIVE LISTINGS', deltaColor: colors.accentGreen },
-            { icon: '👁',  value: '48',  delta: '+12% avg',     label: 'TOTAL SALES',    deltaColor: colors.accentGreen },
-            { icon: '📈', value: '2.4k', delta: '-3%',          label: 'STORE VIEWS',    deltaColor: colors.danger },
-          ].map((s) => (
-            <View key={s.label} style={styles.statCard}>
-              <Text style={{ fontSize: 20 }}>{s.icon}</Text>
-              <Text style={[typography.heading, { color: colors.primary, marginTop: spacing.xs }]}>{s.value}</Text>
-              <Text style={[typography.caption, { color: s.deltaColor }]}>{s.delta}</Text>
-              <Text style={[typography.caption, { textAlign: 'center' }]}>{s.label}</Text>
-            </View>
-          ))}
+          <View style={styles.statCard}>
+            <Text style={{ fontSize: 20 }}>📋</Text>
+            <Text style={[typography.heading, { color: colors.primary, marginTop: spacing.xs }]}>
+              {listings.filter((l) => !l.sold).length}
+            </Text>
+            <Text style={[typography.caption, { color: colors.accentGreen }]}>Active</Text>
+            <Text style={typography.caption}>LISTINGS</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={{ fontSize: 20 }}>✅</Text>
+            <Text style={[typography.heading, { color: colors.primary, marginTop: spacing.xs }]}>
+              {listings.filter((l) => l.sold).length}
+            </Text>
+            <Text style={[typography.caption, { color: colors.accentGreen }]}>Completed</Text>
+            <Text style={typography.caption}>SOLD</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={{ fontSize: 20 }}>👁</Text>
+            <Text style={[typography.heading, { color: colors.primary, marginTop: spacing.xs }]}>
+              2.4k
+            </Text>
+            <Text style={[typography.caption, { color: colors.danger }]}>-3%</Text>
+            <Text style={typography.caption}>VIEWS</Text>
+          </View>
         </View>
 
-        {/* SmartPrint */}
         <View style={styles.smartPrint}>
-          <Text style={[typography.subheading, { color: colors.primaryTeal }]}>SmartPrint</Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm }}>
-            <View>
-              <Text style={typography.caption}>Recommended Price</Text>
-              <View style={styles.demandBadge}>
-                <Text style={{ color: '#FFFFFF', fontSize: 10 }}>HIGH DEMAND</Text>
-              </View>
-              <Text style={[typography.heading, { color: colors.primary }]}>NPR 8,500 - 12,000</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={typography.caption}>Your Avg Sales</Text>
-              <Text style={[typography.subheading, { color: colors.primary }]}>NPR 10,500</Text>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>NPR 9,000</Text>
-            </View>
-          </View>
-          <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>
-            Items on trend for Vintage Cashmere. Premium items selling 53% faster now.
+          <Text style={[typography.subheading, { color: colors.primaryTeal }]}>
+            📊 SmartPrint AI Pricing
           </Text>
-          <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>YOUR ASKING PRICE</Text>
-          <Text style={[typography.subheading, { color: colors.primary }]}>NPR 10,500</Text>
-          <Pressable style={styles.postBtn} onPress={() => navigation.navigate('CreateListing')}>
-            <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Post Listing →</Text>
-          </Pressable>
-        </View>
-
-        {/* Inventory header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.lg }}>
-          <Text style={typography.subheading}>Apparel Inventory</Text>
-          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <Pressable style={styles.filterBtn}>
-              <Text style={typography.caption}>Filters</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>
+            Recommended Price based on market demand
+          </Text>
+          <Text style={[typography.heading, { color: colors.primary, marginTop: spacing.sm }]}>
+            NPR 8,500 - 12,000
+          </Text>
+          <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
+            <Pressable
+              style={[styles.actionBtn, { flex: 1, backgroundColor: colors.primary }]}
+              onPress={() => navigation.navigate('CreateListing')}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>+ New Listing</Text>
             </Pressable>
-            <Pressable style={styles.newListingBtn} onPress={() => navigation.navigate('CreateListing')}>
-              <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>+ New Listing</Text>
+            <Pressable
+              style={[styles.actionBtn, { flex: 1, backgroundColor: colors.primaryTeal }]}
+              onPress={() => navigation.navigate('SellerOrders')}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>My Orders</Text>
+            </Pressable>
+          </View>
+          <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
+            <Pressable
+              style={[styles.actionBtn, { flex: 1, backgroundColor: colors.accentGreen }]}
+              onPress={() => navigation.navigate('SellerAnalytics')}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Analytics</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.actionBtn, { flex: 1, backgroundColor: colors.amber }]}
+              onPress={() => navigation.navigate('SellerEarnings')}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Earnings</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* Listing cards */}
-        {LISTINGS.map((item) => (
-          <View key={item.id} style={styles.listingCard}>
-            {/* Image properly wrapped for overflow clip */}
-            <View style={styles.listingImageWrap}>
-              <Image
-                source={item.image}
-                style={styles.listingImage}
-                resizeMode="cover"
-              />
-            </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.lg, marginBottom: spacing.sm }}>
+          <Text style={typography.subheading}>My Listings</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary }]}>
+            {listings.length} total
+          </Text>
+        </View>
+
+        {listings.map((item) => (
+          <View key={item.id} style={[styles.listingCard, item.sold && styles.soldCard]}>
+            <Image source={item.image} style={styles.listingImage} />
             <View style={{ flex: 1, marginLeft: spacing.md }}>
               <Text style={typography.subheading} numberOfLines={1}>{item.title}</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                Clothing · listed 1 day ago
+                {item.views + ' views'}
               </Text>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.xs }}>
-                <Text style={{ color: colors.accentGreen, fontWeight: '700' }}>NPR {item.price}</Text>
-                <View style={[
-                  styles.statusBadge,
-                  { backgroundColor: item.status === 'SOLD' ? colors.danger + '22' : colors.accentGreen + '22' },
-                ]}>
-                  <Text style={{
-                    color: item.status === 'SOLD' ? colors.danger : colors.accentGreen,
-                    fontSize: 10,
-                    fontWeight: '700',
-                  }}>
-                    {item.status === 'SOLD' ? 'Transaction Completed' : `ACTIVE · ${item.views} views`}
+              <Text style={{ color: colors.accentGreen, fontWeight: '700' }}>
+                {'NPR ' + item.price}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs, gap: spacing.xs }}>
+                <View style={[styles.statusBadge, { backgroundColor: item.sold ? colors.danger + '22' : colors.accentGreen + '22' }]}>
+                  <Text style={{ color: item.sold ? colors.danger : colors.accentGreen, fontSize: 10, fontWeight: '700' }}>
+                    {item.sold ? '● SOLD' : '● ACTIVE'}
                   </Text>
                 </View>
+                <Pressable
+                  style={[styles.toggleSoldBtn, { backgroundColor: item.sold ? colors.accentGreen : colors.danger }]}
+                  onPress={() => toggleSold(item.id)}
+                >
+                  <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700' }}>
+                    {item.sold ? 'Mark Available' : 'Mark Sold'}
+                  </Text>
+                </Pressable>
               </View>
             </View>
-            <View style={{ gap: spacing.sm, marginLeft: spacing.sm }}>
-              <Pressable><Text style={{ fontSize: 16 }}>✏</Text></Pressable>
-              <Pressable><Text style={{ fontSize: 16 }}>⋯</Text></Pressable>
+            <View style={{ gap: spacing.sm }}>
+              <Pressable onPress={() => Alert.alert('Edit', 'Edit listing coming soon!')}>
+                <Text style={{ fontSize: 18 }}>✏</Text>
+              </Pressable>
+              <Pressable onPress={() => deleteListing(item.id)}>
+                <Text style={{ fontSize: 18 }}>🗑</Text>
+              </Pressable>
             </View>
           </View>
         ))}
-
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
   statsRow: { flexDirection: 'row', gap: spacing.sm },
-  statCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  smartPrint: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginTop: spacing.md,
-  },
-  demandBadge: {
-    backgroundColor: colors.danger,
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-    marginVertical: spacing.xs,
-  },
-  postBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  filterBtn: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  newListingBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  listingCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginTop: spacing.sm,
-  },
-  listingImageWrap: {
-    width: 70,
-    height: 70,
-    borderRadius: radius.sm,
-    overflow: 'hidden',
-    backgroundColor: colors.border,
-  },
-  listingImage: {
-    width: '100%',
-    height: '100%',
-  },
-  statusBadge: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-  },
+  statCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, alignItems: 'center' },
+  smartPrint: { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md },
+  actionBtn: { borderRadius: radius.md, padding: spacing.sm, alignItems: 'center' },
+  listingCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm },
+  soldCard: { opacity: 0.7, borderWidth: 1, borderColor: colors.danger + '44' },
+  listingImage: { width: 70, height: 70, borderRadius: radius.sm },
+  statusBadge: { paddingHorizontal: spacing.xs, paddingVertical: 2, borderRadius: radius.pill },
+  toggleSoldBtn: { paddingHorizontal: spacing.xs, paddingVertical: 2, borderRadius: radius.pill },
 });

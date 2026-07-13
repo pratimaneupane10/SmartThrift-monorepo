@@ -3,47 +3,41 @@ import { View, Text, ScrollView, Pressable, StyleSheet, Switch, Alert } from 're
 import { colors, spacing, typography, radius } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 
-export default function SettingsScreen({ navigation }) {
+export default function SellerSettingsScreen({ navigation }) {
   const { user, logout } = useAuth();
-  const [biddingAlerts, setBiddingAlerts] = useState(true);
-  const [newMessages, setNewMessages] = useState(true);
-  const [dropAlerts, setDropAlerts] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [emailNotif, setEmailNotif] = useState(true);
+  const [newOrders, setNewOrders] = useState(true);
+  const [messages, setMessages] = useState(true);
+  const [priceAlerts, setPriceAlerts] = useState(false);
+  const [weeklyReport, setWeeklyReport] = useState(true);
+  const [autoReply, setAutoReply] = useState(false);
 
   function handleLogout() {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    Alert.alert('Logout', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Logout', style: 'destructive', onPress: () => logout() },
     ]);
   }
 
-  function handleDeactivate() {
-    Alert.alert(
-      'Deactivate Account',
-      'This will permanently deactivate your account. Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Deactivate', style: 'destructive', onPress: () => logout() },
-      ]
-    );
-  }
-
-  const ACCOUNT_ITEMS = [
-    { label: 'Edit Profile', sub: 'Update your name, photo and bio', icon: '👤', screen: 'EditProfile' },
-    { label: 'Change Password', sub: 'Update your login password', icon: '🔒', screen: 'ChangePassword' },
-    { label: 'My Addresses', sub: 'Manage delivery addresses', icon: '📍', screen: 'Address' },
-    { label: 'Privacy Policy', sub: 'How we handle your data', icon: '🛡', screen: 'Privacy' },
-    { label: 'Terms & Conditions', sub: 'Platform rules and policies', icon: '📄', screen: 'Terms' },
-    { label: 'Help & Support', sub: 'FAQs and contact us', icon: '❓', screen: 'Help' },
+  const SHOP_ITEMS = [
+    { label: 'Shop Profile', sub: 'Edit shop name and description', icon: '🏪', onPress: () => Alert.alert('Coming Soon', 'Shop profile editor coming soon!') },
+    { label: 'Payment Details', sub: 'Bank account and eSewa linked', icon: '💳', onPress: () => Alert.alert('Payment', 'eSewa: 98XXXXXXXX\nBank: linked') },
+    { label: 'Shipping Settings', sub: 'Delivery zones and rates', icon: '🚚', onPress: () => Alert.alert('Shipping', 'Standard: NPR 150\nExpress: NPR 300') },
+    { label: 'Shop Addresses', sub: 'Pickup and return addresses', icon: '📍', onPress: () => navigation.navigate('SellerAddress') },
+    { label: 'Analytics', sub: 'Sales and performance data', icon: '📊', onPress: () => navigation.navigate('SellerAnalytics') },
+    { label: 'Change Password', sub: 'Update login credentials', icon: '🔒', onPress: () => navigation.navigate('ChangePassword') },
+    { label: 'Privacy Policy', sub: 'Seller data policies', icon: '🛡', onPress: () => navigation.navigate('Privacy') },
+    { label: 'Terms & Conditions', sub: 'Seller agreement', icon: '📄', onPress: () => navigation.navigate('Terms') },
+    { label: 'Help & Support', sub: 'Get help with your shop', icon: '❓', onPress: () => navigation.navigate('Help') },
+    { label: 'Customer Reviews', sub: 'See what buyers say about you', icon: '⭐', onPress: () => navigation.navigate('SellerReviews') },
+{ label: 'Help & Support', sub: 'Seller guides and FAQs', icon: '❓', onPress: () => navigation.navigate('SellerHelp') },
   ];
 
   const TOGGLES = [
-    { label: 'Bidding Alerts', sub: 'Receive updates on items you bid on', value: biddingAlerts, setter: setBiddingAlerts },
-    { label: 'New Messages', sub: 'Chat notifications from sellers', value: newMessages, setter: setNewMessages },
-    { label: 'Drop Alerts', sub: 'Be first to know about new drops', value: dropAlerts, setter: setDropAlerts },
-    { label: 'Email Notifications', sub: 'Receive emails for orders', value: emailNotif, setter: setEmailNotif },
-    { label: 'Dark Mode', sub: 'Switch to dark theme', value: darkMode, setter: setDarkMode },
+    { label: 'New Order Alerts', sub: 'Alert when order is placed', value: newOrders, setter: setNewOrders },
+    { label: 'Message Alerts', sub: 'Buyer inquiry notifications', value: messages, setter: setMessages },
+    { label: 'Price Change Alerts', sub: 'Market price notifications', value: priceAlerts, setter: setPriceAlerts },
+    { label: 'Weekly Sales Report', sub: 'Summary every Monday', value: weeklyReport, setter: setWeeklyReport },
+    { label: 'Auto Reply', sub: 'Auto respond to buyers when away', value: autoReply, setter: setAutoReply },
   ];
 
   return (
@@ -53,37 +47,35 @@ export default function SettingsScreen({ navigation }) {
           <Text style={styles.backArrow}>{'<'}</Text>
           <Text style={styles.backText}>Back</Text>
         </Pressable>
-        <Text style={typography.subheading}>Settings</Text>
+        <Text style={typography.subheading}>Seller Settings</Text>
         <View style={{ width: 70 }} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
-            <Text style={{ fontSize: 28 }}>👤</Text>
+            <Text style={{ fontSize: 28 }}>🏪</Text>
           </View>
           <View style={{ marginLeft: spacing.md }}>
-            <Text style={typography.subheading}>{user?.name || 'Ramesh Thapa'}</Text>
+            <Text style={typography.subheading}>{user?.name || 'Seller User'}</Text>
             <Text style={[typography.caption, { color: colors.textSecondary }]}>
-              {user?.email || 'ramesh@gmail.com'}
+              {user?.email || 'seller@shop.com'}
             </Text>
-            <Pressable onPress={() => navigation.navigate('EditProfile')}>
-              <Text style={[typography.caption, { color: colors.primaryTeal, fontWeight: '700', marginTop: 2 }]}>
-                Edit Profile
-              </Text>
-            </Pressable>
+            <View style={styles.verifiedBadge}>
+              <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700' }}>VERIFIED SELLER</Text>
+            </View>
           </View>
         </View>
 
         <Text style={[typography.subheading, { marginTop: spacing.lg, marginBottom: spacing.sm }]}>
-          Account
+          Shop Settings
         </Text>
         <View style={styles.section}>
-          {ACCOUNT_ITEMS.map((item, i) => (
+          {SHOP_ITEMS.map((item, i) => (
             <Pressable
               key={item.label}
-              style={[styles.settingRow, i === ACCOUNT_ITEMS.length - 1 && { borderBottomWidth: 0 }]}
-              onPress={() => navigation.navigate(item.screen)}
+              style={[styles.settingRow, i === SHOP_ITEMS.length - 1 && { borderBottomWidth: 0 }]}
+              onPress={item.onPress}
             >
               <Text style={{ fontSize: 20, marginRight: spacing.md }}>{item.icon}</Text>
               <View style={{ flex: 1 }}>
@@ -111,21 +103,15 @@ export default function SettingsScreen({ navigation }) {
               <Switch
                 value={item.value}
                 onValueChange={item.setter}
-                trackColor={{ true: colors.accentGreen }}
+                trackColor={{ true: colors.primaryTeal }}
               />
             </View>
           ))}
         </View>
 
         <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 16 }}>
-            Logout
-          </Text>
-        </Pressable>
-
-        <Pressable style={styles.deactivateBtn} onPress={handleDeactivate}>
           <Text style={{ color: colors.danger, fontWeight: '700', fontSize: 16 }}>
-            Deactivate Account
+            Logout
           </Text>
         </Pressable>
       </ScrollView>
@@ -139,10 +125,10 @@ const styles = StyleSheet.create({
   backArrow: { fontSize: 36, color: colors.primary, fontWeight: '300', lineHeight: 40 },
   backText: { fontSize: 16, color: colors.primary, fontWeight: '600' },
   profileCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md },
-  avatar: { width: 60, height: 60, borderRadius: 999, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: colors.primary },
+  avatar: { width: 60, height: 60, borderRadius: 999, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: colors.primaryTeal },
+  verifiedBadge: { backgroundColor: colors.primaryTeal, alignSelf: 'flex-start', paddingHorizontal: spacing.xs, paddingVertical: 2, borderRadius: radius.pill, marginTop: 4 },
   section: { backgroundColor: colors.surface, borderRadius: radius.md, overflow: 'hidden' },
   settingRow: { flexDirection: 'row', alignItems: 'center', padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
   toggleRow: { flexDirection: 'row', alignItems: 'center', padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
-  logoutBtn: { borderWidth: 2, borderColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.xl },
-  deactivateBtn: { borderWidth: 1, borderColor: colors.danger, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.sm, marginBottom: spacing.xl },
+  logoutBtn: { borderWidth: 1, borderColor: colors.danger, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.xl, marginBottom: spacing.xl },
 });

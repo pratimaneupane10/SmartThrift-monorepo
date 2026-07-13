@@ -40,15 +40,13 @@ export default function AdminDashboardScreen({ navigation }) {
   }
 
   const QUICK_ACTIONS = [
-  { label: 'Manage Users', icon: '👥', screen: 'AdminUsers' },
-  { label: 'View Reports', icon: '📊', screen: 'AdminReports' },
-  { label: 'Moderate Listings', icon: '📋', screen: 'AdminListings' },
-  { label: 'Send Notification', icon: '🔔', screen: 'AdminNotifications' },
-  { label: 'Transactions', icon: '💳', screen: 'AdminTransactions' },
-  { label: 'Support Tickets', icon: '🎫', screen: 'AdminSupport' },
-  { label: 'Settings', icon: '⚙', screen: 'AdminSettings' },
-  { label: 'Analytics', icon: '📈', screen: 'AdminReports' },
-];
+    { label: 'Manage Users', icon: '👥', screen: 'AdminUsers' },
+    { label: 'View Reports', icon: '📊', screen: 'AdminReports' },
+    { label: 'Moderate Listings', icon: '📋', screen: 'AdminListings' },
+    { label: 'Send Notification', icon: '🔔', screen: 'AdminNotifications' },
+    { label: 'Settings', icon: '⚙', screen: 'AdminSettings' },
+    { label: 'Analytics', icon: '📈', screen: 'AdminReports' },
+  ];
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -57,9 +55,17 @@ export default function AdminDashboardScreen({ navigation }) {
           <Text style={[typography.caption, { color: colors.textSecondary }]}>ADMIN PANEL</Text>
           <Text style={[typography.subheading, { color: colors.primary }]}>Smart Thrift</Text>
         </View>
-        <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={{ color: colors.danger, fontWeight: '700' }}>Logout</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <Pressable
+            style={styles.profileBtn}
+            onPress={() => navigation.navigate('AdminProfile')}
+          >
+            <Text style={{ fontSize: 18 }}>🛡</Text>
+          </Pressable>
+          <Pressable style={styles.logoutBtn} onPress={handleLogout}>
+            <Text style={{ color: colors.danger, fontWeight: '700' }}>Logout</Text>
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView
@@ -171,6 +177,7 @@ export default function AdminDashboardScreen({ navigation }) {
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
   logoutBtn: { borderWidth: 1, borderColor: colors.danger, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
+  profileBtn: { width: 36, height: 36, borderRadius: 999, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   statCard: { width: '47%', backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, borderLeftWidth: 4 },
   listingCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm },

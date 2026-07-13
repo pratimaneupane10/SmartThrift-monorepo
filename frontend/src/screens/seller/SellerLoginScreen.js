@@ -1,57 +1,31 @@
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ScrollView, Pressable } from 'react-native';
 import { colors, spacing, radius, typography } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-}
-
 export default function SellerLoginScreen({ navigation }) {
-  const [email,      setEmail]      = useState('');
-  const [password,   setPassword]   = useState('');
-  const [shopName,   setShopName]   = useState('');
-  const [isRegister, setIsRegister] = useState(false);
-
-  const [emailError,    setEmailError]    = useState('');
-  const [passError,     setPassError]     = useState('');
-  const [shopError,     setShopError]     = useState('');
-
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
 
-  function validate() {
-    let valid = true;
-    setEmailError('');
-    setPassError('');
-    setShopError('');
-
-    if (isRegister && !shopName.trim()) {
-      setShopError('Shop name is required.');
-      valid = false;
+  function handleSellerLogin() {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
+      return;
     }
-
-    if (!email.trim()) {
-      setEmailError('Email is required.');
-      valid = false;
-    } else if (!isValidEmail(email)) {
-      setEmailError('Enter a valid email e.g. shop@example.com');
-      valid = false;
-    }
-
-    if (!password) {
-      setPassError('Password is required.');
-      valid = false;
-    } else if (password.length < 6) {
-      setPassError('Password must be at least 6 characters.');
-      valid = false;
-    }
-
-    return valid;
+    login(email, password, 'seller', 'email');
   }
 
-  function handleSellerLogin() {
-    if (!validate()) return;
-    login(email.trim(), password, 'seller');
+  function handleGoogleLogin() {
+    Alert.alert(
+      'Google Login',
+      'Continue with Google as Seller?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Continue', onPress: () => login('seller.google@gmail.com', 'google', 'seller', 'google') },
+      ]
+    );
   }
 
   return (
@@ -61,37 +35,24 @@ export default function SellerLoginScreen({ navigation }) {
           <Text style={{ fontSize: 32 }}>🏪</Text>
         </View>
         <Text style={[typography.heading, { color: '#FFFFFF', marginTop: spacing.md }]}>
-          {isRegister ? 'Seller Registration' : 'Seller Portal'}
+          Seller Portal
         </Text>
         <Text style={[typography.body, { color: '#FFFFFFAA', marginTop: spacing.xs }]}>
-          {isRegister ? 'Join our ethical marketplace' : 'Manage your sustainable store'}
+          Manage your sustainable store
         </Text>
       </View>
 
-      <ScrollView style={styles.card} contentContainerStyle={{ padding: spacing.lg }}>
+      <ScrollView style={styles.card} keyboardShouldPersistTaps="handled">
+        <Pressable
+          onPress={() => navigation.navigate('Welcome')}
+          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg }}
+        >
+          <Text style={{ fontSize: 28, color: colors.primaryTeal, fontWeight: '300' }}>{'<'}</Text>
+          <Text style={{ fontSize: 16, color: colors.primaryTeal, fontWeight: '600' }}> Back</Text>
+        </Pressable>
 
-        {/* Shop name — register only */}
-        {isRegister && (
-          <>
-            <Text style={styles.label}>SHOP NAME</Text>
-            <View style={[styles.inputRow, shopError ? styles.inputError : null, { marginBottom: 4 }]}>
-              <Text style={{ marginRight: spacing.sm }}>🏪</Text>
-              <TextInput
-                placeholder="Your shop name"
-                placeholderTextColor={colors.textSecondary}
-                style={styles.inputField}
-                value={shopName}
-                onChangeText={(t) => { setShopName(t); setShopError(''); }}
-              />
-            </View>
-            {shopError ? <Text style={styles.errorText}>{shopError}</Text> : null}
-            <View style={{ height: spacing.md }} />
-          </>
-        )}
-
-        {/* Email */}
         <Text style={styles.label}>STORE EMAIL</Text>
-        <View style={[styles.inputRow, emailError ? styles.inputError : null]}>
+        <View style={styles.inputRow}>
           <Text style={{ marginRight: spacing.sm }}>✉</Text>
           <TextInput
             placeholder="merchant@domain.com"
@@ -100,36 +61,46 @@ export default function SellerLoginScreen({ navigation }) {
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
-            onChangeText={(t) => { setEmail(t); setEmailError(''); }}
+            onChangeText={setEmail}
           />
-          {isValidEmail(email) && (
-            <Text style={{ color: colors.accentGreen, fontSize: 14 }}>✓</Text>
-          )}
         </View>
-        {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
-        {/* Password */}
-        <Text style={[styles.label, { marginTop: spacing.md }]}>PASSWORD</Text>
-        <View style={[styles.inputRow, passError ? styles.inputError : null]}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.md }}>
+          <Text style={styles.label}>PASSWORD</Text>
+          <Pressable onPress={() => navigation.navigate('ForgotPassword')}>
+            <Text style={{ color: colors.primaryTeal, fontSize: 12, fontWeight: '700' }}>
+              Forgot Password?
+            </Text>
+          </Pressable>
+        </View>
+        <View style={styles.inputRow}>
           <Text style={{ marginRight: spacing.sm }}>🔒</Text>
           <TextInput
-            placeholder="Min. 6 characters"
+            placeholder="••••••••"
             placeholderTextColor={colors.textSecondary}
             style={styles.inputField}
-            secureTextEntry
+            secureTextEntry={!showPassword}
             value={password}
-            onChangeText={(t) => { setPassword(t); setPassError(''); }}
+            onChangeText={setPassword}
           />
-          {!isRegister && (
-            <Text style={{ color: colors.primaryTeal, fontSize: 12 }}>Forgot?</Text>
-          )}
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Text>{showPassword ? '🙈' : '👁'}</Text>
+          </TouchableOpacity>
         </View>
-        {passError ? <Text style={styles.errorText}>{passError}</Text> : null}
 
         <TouchableOpacity style={styles.loginBtn} onPress={handleSellerLogin}>
           <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>
-            {isRegister ? 'Register as Seller →' : 'Login to Dashboard →'}
+            Login to Dashboard →
           </Text>
+        </TouchableOpacity>
+
+        <Text style={[typography.caption, { textAlign: 'center', marginVertical: spacing.md, color: colors.textSecondary }]}>
+          OR CONTINUE WITH
+        </Text>
+
+        <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin}>
+          <Text style={{ fontSize: 18, marginRight: spacing.sm }}>G</Text>
+          <Text style={{ fontWeight: '600', color: colors.textPrimary }}>Continue with Google</Text>
         </TouchableOpacity>
 
         <View style={styles.verifiedRow}>
@@ -141,14 +112,13 @@ export default function SellerLoginScreen({ navigation }) {
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg, marginBottom: spacing.xl }}>
           <Text style={[typography.caption, { color: colors.textSecondary }]}>
-            {isRegister ? 'Already a seller? ' : 'New to SMARTTHRIFT? '}
+            New to SMARTTHRIFT?{' '}
           </Text>
-          <TouchableOpacity onPress={() => {
-            setIsRegister(!isRegister);
-            setEmailError(''); setPassError(''); setShopError('');
-          }}>
+          {/* FIX: pass role: 'seller' so SignUpScreen (reused for this route)
+              knows to register the account as a seller, not a buyer. */}
+          <TouchableOpacity onPress={() => navigation.navigate('SellerRegister', { role: 'seller' })}>
             <Text style={[typography.caption, { color: colors.primaryTeal, fontWeight: '700' }]}>
-              {isRegister ? 'Login' : 'Register as a Seller'}
+              Sign Up
             </Text>
           </TouchableOpacity>
         </View>
@@ -158,15 +128,14 @@ export default function SellerLoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  page:        { flex: 1, backgroundColor: colors.primaryTeal },
-  hero:        { padding: spacing.lg, paddingTop: 60, alignItems: 'center' },
-  logoCircle:  { width: 70, height: 70, borderRadius: 999, backgroundColor: colors.mintIcon, justifyContent: 'center', alignItems: 'center' },
-  card:        { flex: 1, backgroundColor: colors.background, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
-  label:       { fontSize: 11, fontWeight: '700', color: colors.textSecondary, letterSpacing: 1, marginBottom: spacing.xs },
-  inputRow:    { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.sm, padding: spacing.md },
-  inputError:  { borderWidth: 1, borderColor: colors.danger },
-  inputField:  { flex: 1, color: colors.textPrimary, fontSize: 14 },
-  errorText:   { color: colors.danger, fontSize: 11, marginTop: 4, marginLeft: 2 },
-  loginBtn:    { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.lg },
+  page: { flex: 1, backgroundColor: colors.primaryTeal },
+  hero: { padding: spacing.lg, paddingTop: 60, alignItems: 'center' },
+  logoCircle: { width: 70, height: 70, borderRadius: 999, backgroundColor: colors.mintIcon, justifyContent: 'center', alignItems: 'center' },
+  card: { flex: 1, backgroundColor: colors.background, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg },
+  label: { fontSize: 11, fontWeight: '700', color: colors.textSecondary, letterSpacing: 1, marginBottom: spacing.xs },
+  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.sm, padding: spacing.md },
+  inputField: { flex: 1, color: colors.textPrimary, fontSize: 14 },
+  loginBtn: { backgroundColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.lg },
+  googleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md },
   verifiedRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: spacing.md },
 });

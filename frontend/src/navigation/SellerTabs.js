@@ -6,7 +6,7 @@ import SellerInboxScreen from '../screens/seller/SellerInboxScreen';
 import SellerEarningsScreen from '../screens/seller/SellerEarningsScreen';
 import ProfileScreen from '../screens/buyer/ProfileScreen';
 import { colors } from '../theme/theme';
-
+import SellerSettingsScreen from '../screens/seller/SellerSettingsScreen';
 const Tab = createBottomTabNavigator();
 
 const ICONS = {

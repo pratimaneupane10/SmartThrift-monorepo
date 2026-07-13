@@ -21,7 +21,7 @@ export default function SignUpScreen({ navigation }) {
   const [emailError, setEmailError] = useState('');
   const [passError,  setPassError]  = useState('');
 
-  const { register, authLoading } = useAuth();
+  const { login } = useAuth();
 
   function validate() {
     let valid = true;
@@ -59,14 +59,13 @@ export default function SignUpScreen({ navigation }) {
   }
   const strength = getPasswordStrength();
 
-  async function handleSignUp() {
+  function handleSignUp() {
     if (!validate()) return;
-    const result = await register(name.trim(), email.trim(), password);
-    if (!result.success) {
-      Alert.alert('Sign up failed', result.message || 'Please try again.');
-      return;
-    }
-    Alert.alert('🎉 Account Created!', `Welcome to Smart Thrift, ${name.trim()}!`);
+    Alert.alert(
+      '🎉 Account Created!',
+      `Welcome to Smart Thrift, ${name.trim()}!`,
+      [{ text: 'Get Started', onPress: () => login(email.trim(), password, 'buyer') }]
+    );
   }
 
   return (
@@ -146,7 +145,7 @@ export default function SignUpScreen({ navigation }) {
         )}
         {passError ? <Text style={styles.errorText}>{passError}</Text> : null}
 
-        <TouchableOpacity style={styles.signUpBtn} onPress={handleSignUp} disabled={authLoading}>
+        <TouchableOpacity style={styles.signUpBtn} onPress={handleSignUp}>
           <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>Create Account →</Text>
         </TouchableOpacity>
 

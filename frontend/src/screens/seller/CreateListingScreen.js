@@ -1,23 +1,23 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, ScrollView, Pressable,
-  StyleSheet, TouchableOpacity, Alert, Image
+  StyleSheet, Alert, Image
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing, typography, radius } from '../../theme/theme';
 
-const CATEGORIES = ['Jackets', 'Hoodies', 'Tees', 'Pants', 'Accessories'];
-const SIZES = ['S', 'M', 'L', 'XL'];
+const CATEGORIES = ['Jackets', 'Hoodies', 'Tees', 'Shirts', 'Jeans', 'Shorts', 'Joggers', 'Overcoats'];
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 const CONDITIONS = ['Like New', 'Excellent', 'Good', 'Fair'];
 
 export default function CreateListingScreen({ navigation }) {
-  const [title, setTitle] = useState('');
+  const [title,       setTitle]       = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState(null);
-  const [size, setSize] = useState('M');
-  const [condition, setCondition] = useState('Good');
-  const [price, setPrice] = useState('');
-  const [photos, setPhotos] = useState([]);
+  const [category,    setCategory]    = useState(null);
+  const [size,        setSize]        = useState('M');
+  const [condition,   setCondition]   = useState('Good');
+  const [price,       setPrice]       = useState('');
+  const [photos,      setPhotos]      = useState([]);
 
   async function pickFromGallery() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -26,7 +26,7 @@ export default function CreateListingScreen({ navigation }) {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 5],
       quality: 0.8,
@@ -56,6 +56,18 @@ export default function CreateListingScreen({ navigation }) {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function showPhotoOptions() {
+    Alert.alert(
+      'Add Photo',
+      'Choose an option',
+      [
+        { text: 'Take Photo',            onPress: takePhoto },
+        { text: 'Choose from Gallery',   onPress: pickFromGallery },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  }
+
   function handlePreview() {
     if (!title || !category || !price) {
       Alert.alert('Missing info', 'Please fill in title, category, and price.');
@@ -70,45 +82,42 @@ export default function CreateListingScreen({ navigation }) {
         condition,
         price: parseInt(price),
         demand: 'high',
-        image: photos[0] || 'https://cdn.pixabay.com/photo/2014/08/26/21/49/jeans-428622_640.jpg',
-      }
+        image: photos[0] || null,
+      },
     });
   }
 
-  function showPhotoOptions() {
-    Alert.alert(
-      'Add Photo',
-      'Choose an option',
-      [
-        { text: 'Take Photo', onPress: takePhoto },
-        { text: 'Choose from Gallery', onPress: pickFromGallery },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  }
+  const estimatedEarnings = price ? Math.floor(parseInt(price) * 0.85) : 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+
+      {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
           <Text style={{ fontSize: 20 }}>✕</Text>
         </Pressable>
         <Text style={typography.subheading}>Post New Item</Text>
-        <Pressable onPress={() => navigation.goBack()}>
-          <Text style={{ fontSize: 20 }}>✕</Text>
-        </Pressable>
+        <View style={{ width: 24 }} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>
-          PHOTOS (Up to 5 photos)
-        </Text>
 
+        {/* Photos */}
+        <Text style={[typography.caption, { color: colors.textSecondary }]}>
+          PHOTOS (Up to 5)
+        </Text>
         <View style={styles.photoRow}>
+
+          {/* Primary photo box */}
           <Pressable style={styles.photoBox} onPress={showPhotoOptions}>
             {photos[0] ? (
-              <View>
-               source={{ uri: photos[0] }}
+              <View style={{ width: 140, height: 160 }}>
+                <Image
+                  source={{ uri: photos[0] }}
+                  style={styles.photoPreview}
+                  resizeMode="cover"
+                />
                 <Pressable style={styles.removeBtn} onPress={() => removePhoto(0)}>
                   <Text style={{ color: '#FFFFFF', fontSize: 12 }}>✕</Text>
                 </Pressable>
@@ -123,6 +132,7 @@ export default function CreateListingScreen({ navigation }) {
             )}
           </Pressable>
 
+          {/* Secondary photos */}
           <View style={styles.smallPhotos}>
             {[1, 2, 3, 4].map((index) => (
               <Pressable
@@ -131,8 +141,12 @@ export default function CreateListingScreen({ navigation }) {
                 onPress={showPhotoOptions}
               >
                 {photos[index] ? (
-                  <View>
-                    <Image source={{ uri: photos[index] }} style={styles.photoPreviewSmall} />
+                  <View style={{ width: 60, height: 60 }}>
+                    <Image
+                      source={{ uri: photos[index] }}
+                      style={styles.photoPreviewSmall}
+                      resizeMode="cover"
+                    />
                     <Pressable style={styles.removeBtnSmall} onPress={() => removePhoto(index)}>
                       <Text style={{ color: '#FFFFFF', fontSize: 10 }}>✕</Text>
                     </Pressable>
@@ -145,6 +159,7 @@ export default function CreateListingScreen({ navigation }) {
           </View>
         </View>
 
+        {/* Demand alert */}
         <View style={styles.demandAlert}>
           <Text style={{ fontSize: 16 }}>📈</Text>
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
@@ -155,7 +170,8 @@ export default function CreateListingScreen({ navigation }) {
           </View>
         </View>
 
-        <Text style={[typography.caption, { marginTop: spacing.lg }]}>ITEM TITLE</Text>
+        {/* Title */}
+        <Text style={[typography.caption, { marginTop: spacing.lg, color: colors.textSecondary }]}>ITEM TITLE *</Text>
         <TextInput
           style={styles.input}
           value={title}
@@ -164,7 +180,8 @@ export default function CreateListingScreen({ navigation }) {
           placeholderTextColor={colors.textSecondary}
         />
 
-        <Text style={[typography.caption, { marginTop: spacing.md }]}>DESCRIPTION</Text>
+        {/* Description */}
+        <Text style={[typography.caption, { marginTop: spacing.md, color: colors.textSecondary }]}>DESCRIPTION</Text>
         <TextInput
           style={[styles.input, { height: 100 }]}
           value={description}
@@ -174,7 +191,8 @@ export default function CreateListingScreen({ navigation }) {
           multiline
         />
 
-        <Text style={[typography.caption, { marginTop: spacing.md }]}>CATEGORY</Text>
+        {/* Category */}
+        <Text style={[typography.caption, { marginTop: spacing.md, color: colors.textSecondary }]}>CATEGORY *</Text>
         <View style={styles.chipRow}>
           {CATEGORIES.map((cat) => (
             <Pressable
@@ -189,7 +207,8 @@ export default function CreateListingScreen({ navigation }) {
           ))}
         </View>
 
-        <Text style={[typography.caption, { marginTop: spacing.md }]}>CONDITION</Text>
+        {/* Condition */}
+        <Text style={[typography.caption, { marginTop: spacing.md, color: colors.textSecondary }]}>CONDITION</Text>
         <View style={styles.chipRow}>
           {CONDITIONS.map((c) => (
             <Pressable
@@ -204,7 +223,8 @@ export default function CreateListingScreen({ navigation }) {
           ))}
         </View>
 
-        <Text style={[typography.caption, { marginTop: spacing.md }]}>SIZE</Text>
+        {/* Size */}
+        <Text style={[typography.caption, { marginTop: spacing.md, color: colors.textSecondary }]}>SIZE</Text>
         <View style={styles.chipRow}>
           {SIZES.map((s) => (
             <Pressable
@@ -219,21 +239,25 @@ export default function CreateListingScreen({ navigation }) {
           ))}
         </View>
 
-        <Text style={[typography.caption, { marginTop: spacing.md }]}>PRICE (NPR)</Text>
+        {/* Price */}
+        <Text style={[typography.caption, { marginTop: spacing.md, color: colors.textSecondary }]}>PRICE (NPR) *</Text>
         <TextInput
           style={styles.input}
           value={price}
           onChangeText={setPrice}
-          placeholder="0.00"
+          placeholder="0"
           placeholderTextColor={colors.textSecondary}
           keyboardType="numeric"
         />
-        <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-          Buyers pay shipping. You'll receive approximately NPR {price ? Math.floor(parseInt(price) * 0.85) : '0.00'} after fees.
-        </Text>
+        {price ? (
+          <Text style={[typography.caption, { color: colors.accentGreen, marginTop: spacing.xs }]}>
+            You'll receive approximately NPR {estimatedEarnings} after fees (15%)
+          </Text>
+        ) : null}
 
+        {/* Preview button */}
         <Pressable style={styles.previewBtn} onPress={handlePreview}>
-          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>Preview Listing</Text>
+          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>Preview Listing →</Text>
         </Pressable>
 
         <View style={{ height: spacing.xl }} />
@@ -243,21 +267,24 @@ export default function CreateListingScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
-  photoRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
-  photoBox: { width: 140, height: 160, backgroundColor: colors.surface, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed' },
-  photoPreview: { width: 140, height: 160, borderRadius: radius.md },
-  removeBtn: { position: 'absolute', top: 4, right: 4, backgroundColor: colors.danger, borderRadius: 999, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' },
-  smallPhotos: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  photoBoxSmall: { width: 60, height: 60, backgroundColor: colors.surface, borderRadius: radius.sm, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  photoPreviewSmall: { width: 60, height: 60, borderRadius: radius.sm },
-  removeBtnSmall: { position: 'absolute', top: 2, right: 2, backgroundColor: colors.danger, borderRadius: 999, width: 16, height: 16, justifyContent: 'center', alignItems: 'center' },
-  demandAlert: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0FFF4', borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md },
-  input: { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.xs, color: colors.textPrimary },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.xs },
-  chip: { paddingVertical: spacing.xs, paddingHorizontal: spacing.md, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  sizeBtn: { width: 48, height: 48, borderRadius: radius.sm, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  sizeBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  previewBtn: { backgroundColor: colors.accentGreen, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.xl },
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border,
+  },
+  photoRow:        { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  photoBox:        { width: 140, height: 160, backgroundColor: colors.surface, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed', overflow: 'hidden' },
+  photoPreview:    { width: 140, height: 160, borderRadius: radius.md },
+  removeBtn:       { position: 'absolute', top: 4, right: 4, backgroundColor: colors.danger, borderRadius: 999, width: 22, height: 22, justifyContent: 'center', alignItems: 'center' },
+  smallPhotos:     { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  photoBoxSmall:   { width: 60, height: 60, backgroundColor: colors.surface, borderRadius: radius.sm, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  photoPreviewSmall:{ width: 60, height: 60, borderRadius: radius.sm },
+  removeBtnSmall:  { position: 'absolute', top: 2, right: 2, backgroundColor: colors.danger, borderRadius: 999, width: 16, height: 16, justifyContent: 'center', alignItems: 'center' },
+  demandAlert:     { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0FFF4', borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md },
+  input:           { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.xs, color: colors.textPrimary },
+  chipRow:         { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.xs },
+  chip:            { paddingVertical: spacing.xs, paddingHorizontal: spacing.md, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  chipActive:      { backgroundColor: colors.primary, borderColor: colors.primary },
+  sizeBtn:         { width: 48, height: 48, borderRadius: radius.sm, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+  sizeBtnActive:   { backgroundColor: colors.primary, borderColor: colors.primary },
+  previewBtn:      { backgroundColor: colors.accentGreen, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.xl },
 });
