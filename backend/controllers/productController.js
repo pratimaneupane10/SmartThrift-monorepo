@@ -120,23 +120,60 @@ const deleteProduct = async (req, res) => {
 // @route  POST /api/products/:id/review  (protected)
 const addReview = async (req, res) => {
   try {
-    const { score, review } = req.body;
+    const { rating, comment } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    }
+
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: 'Product not found' });
 
-    // Prevent duplicate reviews
-    const alreadyReviewed = product.ratings.find(
-      (r) => r.user.toString() === req.user._id.toString()
+    // Prevent duplicate reviews from the same user
+    const alreadyReviewed = product.ratings.some(
+      (r) => r.user && r.user.toString() === req.user._id.toString()
     );
     if (alreadyReviewed) {
-      return res.status(400).json({ message: 'Product already reviewed' });
+      return res.status(400).json({ message: 'You have already reviewed this product' });
     }
 
-    product.ratings.push({ user: req.user._id, score, review });
-    product.updateAverageRating();
+    product.ratings.push({
+      user:    req.user._id,
+      rating:  Number(rating),
+      comment: comment || '',
+    });
+
+    // Recalculate average rating
+    const total = product.ratings.reduce((sum, r) => sum + r.rating, 0);
+    product.averageRating = total / product.ratings.length;
+
     await product.save();
 
-    res.status(201).json({ message: 'Review added', averageRating: product.averageRating });
+    const updated = await Product.findById(req.params.id).populate('ratings.user', 'name');
+    res.status(201).json(updated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @route  GET /api/products/:id/similar
+const getSimilarProducts = async (req, res) => {
+  try {
+    console.log("Similar products request ID:", req.params.id);
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const similar = await Product.find({
+      _id: { $ne: product._id },
+      category: product.category,
+    })
+      .sort({ viewCount: -1, purchaseCount: -1 })
+      .limit(8);
+
+    res.json(similar);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -149,4 +186,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   addReview,
+  getSimilarProducts,
 };
