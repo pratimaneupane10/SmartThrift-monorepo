@@ -29,6 +29,10 @@ export default function AdminDashboardScreen({ navigation }) {
 
   function handleLogout() {
     logout();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Welcome' }],
+    });
   }
 
   function approveListing(id) {

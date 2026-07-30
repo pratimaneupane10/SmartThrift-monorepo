@@ -49,5 +49,23 @@ const sellerOrAdmin = (req, res, next) => {
   return res.status(403).json({ message: 'Seller or admin access required' });
 };
 
-module.exports = { protect, adminOnly, sellerOrAdmin };
+// Optional auth — attaches req.user if a valid token is present, but never blocks
+const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer')) {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id).select('-password');
+      if (user && !user.isBanned) {
+        req.user = user;
+      }
+    }
+  } catch (_) {
+    // Invalid/expired token — just continue as guest
+  }
+  next();
+};
+
+module.exports = { protect, adminOnly, sellerOrAdmin, optionalAuth };
 

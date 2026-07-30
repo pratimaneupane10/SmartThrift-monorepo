@@ -2,12 +2,14 @@
   "expo": {
     "name": "SmartThrift",
     "slug": "SmartThrift",
+    "scheme": "smartthrift",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.SmartThrift"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +25,18 @@
     },
     "plugins": [
       "expo-asset",
-      "expo-status-bar"
-    ]
+      "expo-status-bar",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "googleClientId": {
+        "android": "802262660428-aklairk24gc5qe6p2g8e9jfk4i47rb6f.apps.googleusercontent.com",
+        "ios":     "802262660428-o0i3jl7evnq1qq6th9qe1sk1pdraqnpb.apps.googleusercontent.com",
+        "web":     "802262660428-gn8kvkudnfs7hnh67v0r2qhsdpd7o561.apps.googleusercontent.com"
+      },
+      "eas": {
+        "projectId": "af5c12bf-79b7-498f-bd04-3b9788dc3636"
+      }
+    }
   }
 }

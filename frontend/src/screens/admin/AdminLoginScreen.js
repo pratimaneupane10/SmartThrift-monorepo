@@ -7,20 +7,19 @@ export default function AdminLoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
-  function handleAdminLogin() {
+  async function handleAdminLogin() {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter credentials');
       return;
     }
-    if (email === 'admin@smartthrift.com' && password === 'admin123') {
-      login(email, password, 'admin', 'email');
-    } else {
-      Alert.alert(
-        'Invalid Credentials',
-        'Use:\nEmail: admin@smartthrift.com\nPassword: admin123'
-      );
+    setLoading(true);
+    const result = await login(email, password, 'admin', 'email');
+    setLoading(false);
+    if (!result.success) {
+      Alert.alert('Login Failed', result.message);
     }
   }
 
@@ -103,6 +102,17 @@ export default function AdminLoginScreen({ navigation }) {
             Access Dashboard →
           </Text>
         </TouchableOpacity>
+
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg }}>
+          <Text style={[typography.caption, { color: colors.textSecondary }]}>
+            New Admin?{' '}
+          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('AdminRegister', { role: 'admin' })}>
+            <Text style={[typography.caption, { color: '#1A1A2E', fontWeight: '700' }]}>
+              Sign Up
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );

@@ -7,6 +7,7 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
   function handleGoogleLogin() {
@@ -23,12 +24,17 @@ export default function LoginScreen({ navigation }) {
     );
   }
 
-  function handleLogin() {
+  async function handleLogin() {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter email and password');
       return;
     }
-    login(email, password, 'buyer', 'email');
+    setLoading(true);
+    const result = await login(email, password, 'buyer', 'email');
+    setLoading(false);
+    if (!result.success) {
+      Alert.alert('Login Failed', result.message);
+    }
   }
 
   return (

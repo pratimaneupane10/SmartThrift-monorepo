@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, Pressable, StyleSheet, TouchableOpacity } from 'react-native';
-import { mockItems } from '../../api/mockData';
+import { View, Text, ScrollView, Image, Pressable, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { colors, spacing, typography, radius } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
+import { getProducts } from '../../api/productApi';
 
 const STYLE_BANNERS = [
   { name: 'Vintage',    image: require('../../../assets/item1.jpg') },
@@ -13,23 +13,29 @@ const STYLE_BANNERS = [
 
 const CATEGORIES = [
   { id: 'all',       label: 'All',       icon: '✨' },
-  { id: 'tees',      label: 'Tees',      icon: '👕' },
-  { id: 'shirts',    label: 'Shirts',    icon: '👔' },
-  { id: 'jeans',     label: 'Jeans',     icon: '👖' },
-  { id: 'jackets',   label: 'Jackets',   icon: '🥼' },
-  { id: 'hoodies',   label: 'Hoodies',   icon: null },
-  { id: 'overcoats', label: 'Overcoats', icon: '🧥' },
-  { id: 'shorts',    label: 'Shorts',    icon: '🩳' },
-  { id: 'joggers',   label: 'Joggers',   icon: null },
+  { id: 'Tees',      label: 'Tees',      icon: '👕' },
+  { id: 'Shirts',    label: 'Shirts',    icon: '👔' },
+  { id: 'Jeans',     label: 'Jeans',     icon: '👖' },
+  { id: 'Jackets',   label: 'Jackets',   icon: '🥼' },
+  { id: 'Hoodies',   label: 'Hoodies',   icon: null },
+  { id: 'Overcoats', label: 'Overcoats', icon: '🧥' },
+  { id: 'Shorts',    label: 'Shorts',    icon: '🩳' },
+  { id: 'Joggers',   label: 'Joggers',   icon: null },
 ];
 
 export default function HomeFeedScreen({ navigation }) {
   const { userPreferences, setIsNewUser } = useAuth();
   const preferredCategories = userPreferences?.categories || [];
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [activeCategory, setActiveCategory] = useState(
     preferredCategories.length === 1 ? preferredCategories[0] : 'all'
   );
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     if (preferredCategories.length === 1) {
@@ -37,14 +43,27 @@ export default function HomeFeedScreen({ navigation }) {
     }
   }, [userPreferences]);
 
+  async function fetchProducts() {
+    try {
+      setLoading(true);
+      const data = await getProducts({ limit: 50 });
+      setProducts(data.products || []);
+    } catch (err) {
+      console.error('Failed to fetch products:', err);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const filteredItems = (() => {
     if (activeCategory !== 'all') {
-      return mockItems.filter((item) => item.category === activeCategory);
+      return products.filter((item) => item.category === activeCategory);
     }
     if (preferredCategories.length > 0) {
-      return mockItems.filter((item) => preferredCategories.includes(item.category));
+      return products.filter((item) => preferredCategories.includes(item.category));
     }
-    return mockItems;
+    return products;
   })();
 
   const sectionTitle = (() => {
@@ -59,26 +78,32 @@ export default function HomeFeedScreen({ navigation }) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={[typography.subheading, { color: colors.primary, fontWeight: '800', letterSpacing: 1 }]}>
-          SMART THRIFT
-        </Text>
-        <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-          {/* Edit style preferences button */}
-          <TouchableOpacity
-            onPress={() => navigation.navigate('StylePreference', { editing: true })}
-            style={styles.editStyleBtn}
-          >
-            <Text style={{ fontSize: 14 }}>🎨</Text>
-            <Text style={styles.editStyleText}>Style</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
-            <Text style={{ fontSize: 20 }}>🔍</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
-            <Text style={{ fontSize: 20 }}>🔔</Text>
-          </TouchableOpacity>
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={[typography.subheading, { color: colors.primary, fontWeight: '800', letterSpacing: 1 }]}>
+              SMART THRIFT
+            </Text>
+            <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+              {/* Edit style preferences button */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate('StylePreference', { editing: true })}
+                style={styles.editStyleBtn}
+              >
+                <Text style={{ fontSize: 14 }}>🎨</Text>
+                <Text style={styles.editStyleText}>Style</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
+                <Text style={{ fontSize: 20 }}>🔍</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+                <Text style={{ fontSize: 20 }}>🔔</Text>
+              </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('Cart')}>
             <Text style={{ fontSize: 20 }}>🛍</Text>
           </TouchableOpacity>
@@ -181,14 +206,14 @@ export default function HomeFeedScreen({ navigation }) {
           contentContainerStyle={{ gap: spacing.sm }}
         >
           {(preferredCategories.length > 0
-            ? mockItems.filter(i => preferredCategories.includes(i.category))
-            : mockItems
+            ? products.filter(i => preferredCategories.includes(i.category))
+            : products
           ).slice(0, 4).map((item) => {
-            const imgSource = typeof item.imageUrl === 'number' ? item.imageUrl : { uri: item.imageUrl };
-            const isSold = item.sold === true || item.available === false;
+            const imgSource = item.imageUrl ? { uri: item.imageUrl } : require('../../../assets/item1.jpg');
+            const isSold = item.stock === 0;
             return (
               <Pressable
-                key={item.id}
+                key={item._id}
                 onPress={() => !isSold && navigation.navigate('ProductDetail', { item })}
                 style={styles.horizontalCard}
                 disabled={isSold}
@@ -215,12 +240,12 @@ export default function HomeFeedScreen({ navigation }) {
                   )}
                 </View>
                 <Text style={[typography.caption, { marginTop: spacing.xs, color: colors.textSecondary }]} numberOfLines={1}>
-                  {item.title}
+                  {item.name}
                 </Text>
                 <Text style={{ color: colors.accentGreen, fontWeight: '700', fontSize: 13 }}>
                   NPR {item.price}
                 </Text>
-                <Text style={typography.caption}>{item.size} · {item.condition}</Text>
+                <Text style={typography.caption}>{item.category}</Text>
               </Pressable>
             );
           })}
@@ -245,11 +270,11 @@ export default function HomeFeedScreen({ navigation }) {
         ) : (
           <View style={styles.verticalGrid}>
             {filteredItems.map((item) => {
-              const imgSource = typeof item.imageUrl === 'number' ? item.imageUrl : { uri: item.imageUrl };
-              const isSold = item.sold === true || item.available === false;
+              const imgSource = item.imageUrl ? { uri: item.imageUrl } : require('../../../assets/item1.jpg');
+              const isSold = item.stock === 0;
               return (
                 <Pressable
-                  key={item.id}
+                  key={item._id}
                   onPress={() => !isSold && navigation.navigate('ProductDetail', { item })}
                   style={styles.gridCard}
                   disabled={isSold}
@@ -276,12 +301,12 @@ export default function HomeFeedScreen({ navigation }) {
                     )}
                   </View>
                   <Text style={[typography.caption, { marginTop: spacing.xs, color: colors.textSecondary }]} numberOfLines={1}>
-                    {item.title}
+                    {item.name}
                   </Text>
                   <Text style={{ color: colors.accentGreen, fontWeight: '700', fontSize: 13 }}>
                     NPR {item.price}
                   </Text>
-                  <Text style={typography.caption}>{item.condition}</Text>
+                  <Text style={typography.caption}>{item.category}</Text>
                 </Pressable>
               );
             })}
@@ -289,10 +314,12 @@ export default function HomeFeedScreen({ navigation }) {
         )}
       </ScrollView>
 
-      {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('Cart')}>
-        <Text style={{ color: '#FFFFFF', fontSize: 24 }}>🛍</Text>
-      </TouchableOpacity>
+          {/* FAB */}
+          <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('Cart')}>
+            <Text style={{ color: '#FFFFFF', fontSize: 24 }}>🛍</Text>
+          </TouchableOpacity>
+        </>
+      )}
     </View>
   );
 }

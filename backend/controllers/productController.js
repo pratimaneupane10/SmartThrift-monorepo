@@ -120,10 +120,12 @@ const deleteProduct = async (req, res) => {
 // @route  POST /api/products/:id/review  (protected)
 const addReview = async (req, res) => {
   try {
-    const { rating, comment } = req.body;
+    // Accept both `rating`/`score` and `comment`/`review` for flexibility
+    const score   = Number(req.body.score   ?? req.body.rating);
+    const review  = req.body.review ?? req.body.comment ?? '';
 
-    if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    if (!score || score < 1 || score > 5) {
+      return res.status(400).json({ message: 'Rating (score) must be between 1 and 5' });
     }
 
     const product = await Product.findById(req.params.id);
@@ -138,15 +140,13 @@ const addReview = async (req, res) => {
     }
 
     product.ratings.push({
-      user:    req.user._id,
-      rating:  Number(rating),
-      comment: comment || '',
+      user:   req.user._id,
+      score,
+      review,
     });
 
-    // Recalculate average rating
-    const total = product.ratings.reduce((sum, r) => sum + r.rating, 0);
-    product.averageRating = total / product.ratings.length;
-
+    // Use the schema method to recalculate averageRating + totalReviews
+    product.updateAverageRating();
     await product.save();
 
     const updated = await Product.findById(req.params.id).populate('ratings.user', 'name');

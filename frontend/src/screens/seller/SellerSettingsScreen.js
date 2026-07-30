@@ -14,7 +14,13 @@ export default function SellerSettingsScreen({ navigation }) {
   function handleLogout() {
     Alert.alert('Logout', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: () => logout() },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: () => {
+          logout();
+        },
+      },
     ]);
   }
 

@@ -14,7 +14,13 @@ export default function SettingsScreen({ navigation }) {
   function handleLogout() {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: () => logout() },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: () => {
+          logout();
+        },
+      },
     ]);
   }
 
@@ -24,7 +30,13 @@ export default function SettingsScreen({ navigation }) {
       'This will permanently deactivate your account. Are you sure?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Deactivate', style: 'destructive', onPress: () => logout() },
+        {
+          text: 'Deactivate',
+          style: 'destructive',
+          onPress: () => {
+            logout();
+          },
+        },
       ]
     );
   }

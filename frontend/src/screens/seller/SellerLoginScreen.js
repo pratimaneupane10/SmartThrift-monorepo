@@ -7,14 +7,20 @@ export default function SellerLoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
-  function handleSellerLogin() {
+  async function handleSellerLogin() {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter email and password');
       return;
     }
-    login(email, password, 'seller', 'email');
+    setLoading(true);
+    const result = await login(email, password, 'seller', 'email');
+    setLoading(false);
+    if (!result.success) {
+      Alert.alert('Login Failed', result.message);
+    }
   }
 
   function handleGoogleLogin() {
@@ -88,9 +94,9 @@ export default function SellerLoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.loginBtn} onPress={handleSellerLogin}>
+        <TouchableOpacity style={[styles.loginBtn, loading && { opacity: 0.6 }]} onPress={handleSellerLogin} disabled={loading}>
           <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>
-            Login to Dashboard →
+            {loading ? 'Logging in...' : 'Login to Dashboard →'}
           </Text>
         </TouchableOpacity>
 

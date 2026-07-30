@@ -4,7 +4,7 @@ import SellerDashboardScreen from '../screens/seller/SellerDashboardScreen';
 import CreateListingScreen from '../screens/seller/CreateListingScreen';
 import SellerInboxScreen from '../screens/seller/SellerInboxScreen';
 import SellerEarningsScreen from '../screens/seller/SellerEarningsScreen';
-import ProfileScreen from '../screens/buyer/ProfileScreen';
+import SellerProfileScreen from '../screens/seller/SellerProfileScreen';
 import { colors } from '../theme/theme';
 import SellerSettingsScreen from '../screens/seller/SellerSettingsScreen';
 const Tab = createBottomTabNavigator();
@@ -34,7 +34,7 @@ export default function SellerTabs() {
       <Tab.Screen name="Listings" component={CreateListingScreen} />
       <Tab.Screen name="Messages" component={SellerInboxScreen} />
       <Tab.Screen name="Earnings" component={SellerEarningsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Profile" component={SellerProfileScreen} />
     </Tab.Navigator>
   );
 }

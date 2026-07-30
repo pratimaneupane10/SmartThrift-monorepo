@@ -57,10 +57,10 @@ import AdminSupportScreen from '../screens/admin/AdminSupportScreen';
 
 const Stack = createNativeStackNavigator();
 
-function AuthScreens() {
+function AuthScreens({ initialRouteName }) {
   return (
     <Stack.Navigator
-      initialRouteName="Onboarding"
+      initialRouteName={initialRouteName}
       screenOptions={{ headerShown: false }}
     >
       <Stack.Screen name="Onboarding"     component={OnboardingScreen} />
@@ -71,6 +71,7 @@ function AuthScreens() {
       <Stack.Screen name="SellerRegister" component={SignUpScreen} />
       <Stack.Screen name="SellerLogin"    component={SellerLoginScreen} />
       <Stack.Screen name="AdminLogin"     component={AdminLoginScreen} />
+      <Stack.Screen name="AdminRegister"  component={SignUpScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     </Stack.Navigator>
   );
@@ -163,24 +164,23 @@ function AdminScreens() {
 }
 
 export default function AppNavigator() {
-  const { user, isLoggedIn, isNewUser } = useAuth();
+  const { user, isLoggedIn, isNewUser, justLoggedOut } = useAuth();
 
-  // Each app "mode" gets a distinct key so Android's native-stack navigator
-  // fully unmounts the old screen and mounts a fresh one when the mode
-  // changes, instead of failing to visually update.
   function getNavigatorKey() {
     if (!isLoggedIn) return 'auth';
     if (user?.role === 'seller') return 'seller';
     if (user?.role === 'admin') return 'admin';
-    if (isNewUser) return 'onboarding';
+    if (user?.role === 'buyer' && isNewUser) return 'onboarding';
     return 'buyer';
   }
 
   function renderScreens() {
-    if (!isLoggedIn)             return <AuthScreens />;
+    if (!isLoggedIn) {
+      return <AuthScreens initialRouteName={justLoggedOut ? 'Login' : 'Onboarding'} />;
+    }
     if (user?.role === 'seller') return <SellerScreens />;
-    if (user?.role === 'admin')  return <AdminScreens />;
-    if (isNewUser)                return <OnboardingScreens />;
+    if (user?.role === 'admin') return <AdminScreens />;
+    if (user?.role === 'buyer' && isNewUser) return <OnboardingScreens />;
     return <BuyerScreens />;
   }
 

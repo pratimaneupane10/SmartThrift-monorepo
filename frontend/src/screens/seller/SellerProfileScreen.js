@@ -25,13 +25,13 @@ export default function ProfileScreen({ navigation }) {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.navigate('Settings')}>
+        <Pressable onPress={() => navigation.navigate('SellerSettings')}>
           <Text style={{ fontSize: 22 }}>≡</Text>
         </Pressable>
         <Text style={[typography.subheading, { color: colors.primary, fontWeight: '800' }]}>
           Smart Thrift
         </Text>
-        <Pressable onPress={() => navigation.navigate('Notifications')}>
+        <Pressable onPress={() => navigation.navigate('Messages')}>
           <Text style={{ fontSize: 22 }}>🛍</Text>
         </Pressable>
       </View>
@@ -134,7 +134,7 @@ export default function ProfileScreen({ navigation }) {
               </Text>
               <Pressable
                 style={styles.browseBtn}
-                onPress={() => navigation.navigate('Home')}
+                onPress={() => navigation.navigate('Dashboard')}
               >
                 <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Browse Items</Text>
               </Pressable>
@@ -210,11 +210,9 @@ export default function ProfileScreen({ navigation }) {
       <View style={{ padding: spacing.lg }}>
         {[
           { icon: '📦', label: 'Order History', screen: 'OrderHistory' },
-          ...(user?.role !== 'seller'
-            ? [{ icon: '📍', label: 'My Addresses', screen: 'Address' }]
-            : []),
-          { icon: '⚙', label: 'Settings', screen: 'Settings' },
-          { icon: '❓', label: 'Help & Support', screen: 'Help' },
+          { icon: '📍', label: 'My Addresses', screen: 'SellerAddress' },
+          { icon: '⚙', label: 'Settings', screen: 'SellerSettings' },
+          { icon: '❓', label: 'Help & Support', screen: 'SellerHelp' },
         ].map((item) => (
           <Pressable
             key={item.label}

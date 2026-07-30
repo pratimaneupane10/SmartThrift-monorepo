@@ -15,7 +15,13 @@ export default function AdminSettingsScreen({ navigation }) {
   function handleLogout() {
     Alert.alert('Logout', 'Are you sure you want to logout from admin panel?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: () => logout() },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: () => {
+          logout();
+        },
+      },
     ]);
   }
 

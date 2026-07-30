@@ -3,13 +3,31 @@ const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true,},
-    email: { type: String, required: true, unique: true,},
-    password: { type: String, required: true, select: false,},
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    // Not required at schema level — Google users get a random password set by the controller.
+    password: { type: String, select: false },
+    // OAuth
+    googleId: { type: String, default: null, select: false },
+    profilePicture: { type: String, default: '' },
+    authProvider: { type: String, enum: ['email', 'google'], default: 'email' },
     role: { type: String, enum: ['buyer','seller', 'admin'], default: 'buyer',},
     isBanned: { type: Boolean, default: false },
     resetPasswordToken: { type: String, select: false },
     resetPasswordExpire: { type: Date, select: false },
+    // OTP-based password reset (6-digit code, stored hashed)
+    resetPasswordOTP: { type: String, select: false },
+    resetPasswordOTPExpire: { type: Date, select: false },
+
+    // Buyer personalisation — set during first-time onboarding
+    preferredCategories: { type: [String], default: [] },
+    preferredSizes: {
+      tops:    { type: [String], default: [] },
+      bottoms: { type: [String], default: [] },
+      shoes:   { type: String,   default: '' },
+    },
+    // Flag so onboarding wizard only shows once
+    hasCompletedOnboarding: { type: Boolean, default: false },
 
     viewHistory: [
       {
@@ -19,8 +37,8 @@ const userSchema = new mongoose.Schema(
     ],
 
     wishlist: [
-  { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
-],
+      { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+    ],
 
     purchaseHistory: [
       {

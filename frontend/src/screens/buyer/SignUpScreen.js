@@ -11,7 +11,8 @@ function isValidName(name) {
   return name.trim().length >= 2 && /^[a-zA-Z\s]+$/.test(name.trim());
 }
 
-export default function SignUpScreen({ navigation }) {
+export default function SignUpScreen({ navigation, route }) {
+  const signUpRole = route?.params?.role || 'buyer';
   const [name,         setName]         = useState('');
   const [email,        setEmail]        = useState('');
   const [password,     setPassword]     = useState('');
@@ -21,7 +22,8 @@ export default function SignUpScreen({ navigation }) {
   const [emailError, setEmailError] = useState('');
   const [passError,  setPassError]  = useState('');
 
-  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
 
   function validate() {
     let valid = true;
@@ -59,13 +61,14 @@ export default function SignUpScreen({ navigation }) {
   }
   const strength = getPasswordStrength();
 
-  function handleSignUp() {
+  async function handleSignUp() {
     if (!validate()) return;
-    Alert.alert(
-      '🎉 Account Created!',
-      `Welcome to Smart Thrift, ${name.trim()}!`,
-      [{ text: 'Get Started', onPress: () => login(email.trim(), password, 'buyer') }]
-    );
+    setLoading(true);
+    const result = await register(name.trim(), email.trim(), password, signUpRole);
+    setLoading(false);
+    if (!result.success) {
+      Alert.alert('Registration Failed', result.message);
+    }
   }
 
   return (
@@ -145,8 +148,8 @@ export default function SignUpScreen({ navigation }) {
         )}
         {passError ? <Text style={styles.errorText}>{passError}</Text> : null}
 
-        <TouchableOpacity style={styles.signUpBtn} onPress={handleSignUp}>
-          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>Create Account →</Text>
+        <TouchableOpacity style={[styles.signUpBtn, loading && { opacity: 0.6 }]} onPress={handleSignUp} disabled={loading}>
+          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>{loading ? 'Creating Account...' : 'Create Account →'}</Text>
         </TouchableOpacity>
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg, marginBottom: spacing.xl }}>
